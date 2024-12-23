@@ -1,6 +1,6 @@
 homepage: "https://www.beehiiv.com"
-documentation: ""
+documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest Version
-  - sha: 1943326fd2ee1a567a0a40a29a6f5fefef538f2e
+  - sha: b0b70daaa6af29dcc311294aad023071ef4a42fc
   changeNotes: Initial release.
