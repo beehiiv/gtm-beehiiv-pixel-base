@@ -2,4 +2,4 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   - sha: 19647af5fac39d25b74aad30a535da3325162fca
-  changeNotes: Initial release with license etc.
+    changeNotes: Initial release with license etc.
