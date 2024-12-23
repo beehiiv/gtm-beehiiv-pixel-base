@@ -1,7 +1,7 @@
 homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
-  - sha: fe425343b367516c1656360206fc159d52deef6b
+  - sha: 8ee8890c4e245890705526ed81d8cd0c6b5249ca
     changeNotes: Updates to tag to match script updates.
   - sha: 19647af5fac39d25b74aad30a535da3325162fca
     changeNotes: Initial release with license etc.
