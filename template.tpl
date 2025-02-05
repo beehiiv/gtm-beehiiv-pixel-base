@@ -254,7 +254,7 @@ function sendEvent(
 function sendTagEvent(event, payload) {
   return () => {
     const tagEvent = 'bhpx:' + event;
-    log('sending tag event to GTM');
+    log('sending tag event to GTM', tagEvent);
     bhpx_queue('event', tagEvent, payload);
     data.gtmOnSuccess();
   };
