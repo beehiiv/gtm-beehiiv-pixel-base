@@ -1,8 +1,24 @@
 homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
+  # Latest version
+  - sha: 4a5386eb39b866359cb441ece9696ad34593a9a1
+    changeNotes: |2
+      Version 1.1
+
+      Make changes to the base GTM pixel tag to ensure it functions similarly to
+      the manual pixel.
+
+      Since `sendPixel` is a `GET` and our backend requires a `POST` request, this
+      version injects a `pixel-support.js` script to handle the POST request.
+
+      In addition, a new `_bhp` profile cookie is automatically created as a `UUID`.
+
+      And finally, after the event is sent to Apiary, it also sends the event to
+      the GTM tag queue. All events are prefixed with `bhpx:` like `bhpx:pageview`.
+  # Older versions
   - sha: 8ee8890c4e245890705526ed81d8cd0c6b5249ca
     changeNotes: Updates to tag to match script updates.
   - sha: 19647af5fac39d25b74aad30a535da3325162fca
     changeNotes: Initial release with license etc.
- 
+
