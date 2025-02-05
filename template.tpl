@@ -35,50 +35,63 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 // Required APIs
 const log = require('logToConsole');
-const sendPixel = require('sendPixel');
 const createArgumentsQueue = require('createArgumentsQueue');
-const encodeUriComponent = require('encodeUriComponent');
 const decodeUriComponent = require('decodeUriComponent');
 const getCookieValues = require('getCookieValues');
 const setCookie = require('setCookie');
 const generateRandom = require('generateRandom');
 const getTimestampMillis = require('getTimestampMillis');
 const getUrl = require('getUrl');
-const getReferrerUrl = require('getReferrerUrl');
 const getType = require('getType');
 const parseUrl = require('parseUrl');
 const JSON = require('JSON');
 const injectScript = require('injectScript');
-const createQueue = require('createQueue');
 const makeInteger = require('makeInteger');
+const copyFromWindow = require('copyFromWindow');
+const setInWindow = require('setInWindow');
 
+log('beehiiv pixel v1.1 loaded');
 // Constants
-const APIARY_ENDPOINT = "https://ingestion.apiary.beehiiv.net/api/v1/ingestion/pixel";
-const ADNETWORK_ENDPOINT = "https://adnetwork.beehiiv.com";
+const APIARY_ENDPOINT =
+  'https://ingestion.apiary.beehiiv.net/api/v1/ingestion/pixel';
+
+const SUPPORT_SCRIPT_URL =
+  'https://s3.amazonaws.com/beehiiv-adnetwork-production/pixel-support.js';
 const isSecure = true;
 
-// Helper Functions
-const makeString = function(value) {
-  if (value == undefined) return undefined;
-  return getType(value) === 'string' ? value : value.toString();
+const onSuccess = function () {
+  log('pixel-support.js loaded');
+  log('sending initial event');
+  sendInitialEvent();
 };
 
-const parseUrlParams = function(url) {
-  var params = {};
-  var searchIndex = url.indexOf('?');
+// inject pixel-support.js then send initial event on success
+injectScript(SUPPORT_SCRIPT_URL, onSuccess, data.gtmOnFailure);
+
+// Helper Functions
+function makeString(value) {
+  if (value == undefined) return undefined;
+  return getType(value) === 'string' ? value : value.toString();
+}
+
+function parseUrlParams(url) {
+  const params = {};
+  const searchIndex = url.indexOf('?');
   if (searchIndex !== -1) {
-    var searchParams = url.slice(searchIndex + 1).split('&');
-    for (var i = 0; i < searchParams.length; i++) {
-      var pair = searchParams[i].split('=');
-      params[decodeUriComponent(pair[0])] = decodeUriComponent(pair[1] || '');
+    const searchParams = url.slice(searchIndex + 1).split('&');
+    for (let i = 0; i < searchParams.length; i++) {
+      const parts = searchParams[i].split('=');
+      const name = parts[0];
+      const value = parts[1];
+      params[decodeUriComponent(name)] = decodeUriComponent(value || '');
     }
   }
   return params;
-};
+}
 
-const generateUUID = function() {
-  var uuid = '';
-  for (var i = 0; i < 36; i++) {
+function generateUUID() {
+  let uuid = '';
+  for (let i = 0; i < 36; i++) {
     if (i === 8 || i === 13 || i === 18 || i === 23) {
       uuid += '-';
     } else if (i === 14) {
@@ -90,91 +103,119 @@ const generateUUID = function() {
     }
   }
   return uuid;
-};
+}
 
 // Domain and Host Handling
-const getHostDomain = function(hostname) {
-  if (hostname === "localhost" || hostname === "127.0.0.1") 
-    return {};
-    
-  var host = "www";
-  var domain = "";
-  var parts = hostname.split(".");
-  
+function getHostDomain(hostname) {
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return {};
+
+  let host = 'www';
+  let domain = '';
+  let parts = hostname.split('.');
+
   if (parts.length < 3) {
     domain = parts[0] + '.' + parts[1];
   } else {
     host = parts[0];
     domain = parts[1] + '.' + parts[2];
   }
-  
+
   return { host: host, domain: domain };
-};
+}
 
 // Cookie Management
-const updateCookie = function(bhcl_id, host, domain) {
+function getCookieName(host) {
+  return '_bhcl_' + (host || 'www');
+}
+
+function updateCookie(name, value, domain) {
   const expires = 365 * 24 * 60 * 60;
-  if (bhcl_id) {
-    const cookieName = '_bhcl_' + (host || 'www');
-    setCookie(cookieName, bhcl_id, {
+  if (value) {
+    setCookie(name, value, {
       domain: '.' + domain,
       path: '/',
       'max-age': expires,
       secure: isSecure,
       sameSite: 'strict'
     });
-    log('bhcl_id added to cookie: ' + cookieName);
+    log('cookie updated: ' + name + '=' + value);
   }
-};
+}
 
 // ID Management
-const get_bhcl_id = function() {
+function get_bhcl_id() {
   const urlObject = parseUrl(getUrl());
   if (!urlObject || !urlObject.hostname) {
     log('Invalid URL or missing hostname');
     return [];
   }
-  
+
   const hostDomainObj = getHostDomain(urlObject.hostname);
   const host = hostDomainObj.host;
   const domain = hostDomainObj.domain;
   if (!domain) return [];
-  
-  var event = "pageview";
+
   const urlParams = parseUrlParams(getUrl());
-  var bhcl_id = urlParams.bhcl_id;
-  
+  let bhcl_id = urlParams.bhcl_id;
+  let event = 'pageview';
+
+  const bhclCookieName = getCookieName(host);
+
   if (bhcl_id) {
-    updateCookie(bhcl_id, host, domain);
-    event = "first_visited";
+    log('bhcl_id found in params', bhcl_id);
+    updateCookie(bhclCookieName, bhcl_id, domain);
+    event = 'first_visited';
+  } else {
+    bhcl_id = getCookieValues(bhclCookieName)[0];
+    if (!bhcl_id) {
+      log('no bhcl_id found');
+      return [];
+    }
+    log('bhcl_id found in cookie', bhclCookieName, bhcl_id);
   }
-  
-  const cookieName = '_bhcl_' + (host || 'www');
-  bhcl_id = getCookieValues(cookieName)[0];
-  const bhp = getCookieValues('_bhp')[0];
-  
-  if (!bhcl_id) {
-    log('no bhcl_id found');
-    return [];
+
+  // Get BHP from cookie or create a new one if not present
+  let bhp = getCookieValues('_bhp')[0];
+  if (!bhp) {
+    bhp = generateUUID();
+    updateCookie('_bhp', bhp, domain);
   }
-  
-  log('bhcl_id found in cookie: ' + cookieName, bhcl_id);
-  var parts = bhcl_id.split('_');
-  var ad_network_placement_id = parts[0];
-  var subscriber_id = parts[1];
+
+  const parts = bhcl_id.split('_');
+  const ad_network_placement_id = parts[0];
+  const subscriber_id = parts[1];
   return [ad_network_placement_id, subscriber_id, event, bhp];
-};
+}
+
+function sendInitialEvent() {
+  const parts = get_bhcl_id();
+  const ad_network_placement_id = parts[0];
+  const subscriber_id = parts[1];
+  const event = parts[2];
+  const bhp = parts[3];
+  sendEvent(event, ad_network_placement_id, subscriber_id, bhp, {});
+}
+
+// create gtm queue to process events called from sendEvent()
+const bhpx_queue = createArgumentsQueue('bhpx_queue', 'dataLayer');
 
 // Event Handling
-const sendEvent = function(event, ad_network_placement_id, subscriber_id, bhp, eventData) {
+function sendEvent(
+  event,
+  ad_network_placement_id,
+  subscriber_id,
+  bhp,
+  eventData
+) {
   if (!event || !ad_network_placement_id) return;
-  
+
   const event_id = generateUUID();
   const timestamp = getTimestampMillis();
-  
+
   const payload = {
     ad_network_placement_id: makeString(ad_network_placement_id),
     subscriber_id: makeString(subscriber_id || ''),
+    profile_id: bhp || '',
     event: makeString(event),
     timestamp: timestamp,
     landed_timestamp: timestamp,
@@ -183,32 +224,53 @@ const sendEvent = function(event, ad_network_placement_id, subscriber_id, bhp, e
     url: makeString(getUrl()),
     user_agent: makeString(eventData.user_agent),
     content_category: makeString(eventData.content_category),
-    content_ids: makeString(eventData.content_ids),
+    content_ids: eventData.content_ids,
     content_name: makeString(eventData.content_name),
     content_type: makeString(eventData.content_type),
     currency: makeString(eventData.currency),
     num_items: makeInteger(eventData.num_items),
     predicted_ltv_cents: makeInteger(eventData.predicted_ltv_cents),
     search_string: makeString(eventData.search_string),
-    status: makeString(eventData.status),
+    status: eventData.status,
     value_cents: makeInteger(eventData.value_cents)
   };
-  
+
   log('sending ' + event + ' event to pixel endpoint', payload);
-  
-  sendPixel(APIARY_ENDPOINT + '?data=' + encodeUriComponent(JSON.stringify([payload])), function() {
-    log('Pixel sent successfully');
-    data.gtmOnSuccess();
-  }, function() {
-    log('Failed to send pixel');
+
+  const bhpx_sendPixel = copyFromWindow('bhpx_sendPixel');
+  if (typeof bhpx_sendPixel === 'function') {
+    // send pixel event to Apiary and GTM queue
+    bhpx_sendPixel(
+      APIARY_ENDPOINT,
+      payload,
+      sendTagEvent(event, payload),
+      data.gtmOnFailure
+    );
+  } else {
     data.gtmOnFailure();
-  });
-};
+  }
+}
 
-const validEvents = ['conversion', 'lead', 'complete_registration', 'purchase', 
-                    'initiate_checkout', 'start_trial', 'subscribe'];
+function sendTagEvent(event, payload) {
+  return () => {
+    const tagEvent = 'bhpx:' + event;
+    log('sending tag event to GTM', tagEvent);
+    bhpx_queue('event', tagEvent, payload);
+    data.gtmOnSuccess();
+  };
+}
 
-const onBhpxCall = function(command, event, options) {
+const validEvents = [
+  'conversion',
+  'lead',
+  'complete_registration',
+  'purchase',
+  'initiate_checkout',
+  'start_trial',
+  'subscribe'
+];
+
+function bhpx(command, event, options) {
   if (!command) {
     log('bhpx: missing command');
     data.gtmOnFailure();
@@ -245,10 +307,12 @@ const onBhpxCall = function(command, event, options) {
   }
 
   sendEvent(event, ad_network_placement_id, subscriber_id, bhp, options.data);
-};
+}
 
-const bhpx = createQueue('bhpx');
-bhpx(onBhpxCall);
+// make bhpx function available as a global function
+setInWindow('bhpx', bhpx);
+
+data.gtmOnSuccess();
 
 
 ___WEB_PERMISSIONS___
@@ -278,208 +342,20 @@ ___WEB_PERMISSIONS___
   {
     "instance": {
       "key": {
-        "publicId": "get_cookies",
+        "publicId": "inject_script",
         "versionId": "1"
       },
       "param": [
         {
-          "key": "cookieAccess",
-          "value": {
-            "type": 1,
-            "string": "any"
-          }
-        }
-      ]
-    },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
-    "isRequired": true
-  },
-  {
-    "instance": {
-      "key": {
-        "publicId": "get_referrer",
-        "versionId": "1"
-      },
-      "param": [
-        {
-          "key": "urlParts",
-          "value": {
-            "type": 1,
-            "string": "any"
-          }
-        },
-        {
-          "key": "queriesAllowed",
-          "value": {
-            "type": 1,
-            "string": "any"
-          }
-        }
-      ]
-    },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
-    "isRequired": true
-  },
-  {
-    "instance": {
-      "key": {
-        "publicId": "send_pixel",
-        "versionId": "1"
-      },
-      "param": [
-        {
-          "key": "allowedUrls",
-          "value": {
-            "type": 1,
-            "string": "any"
-          }
-        }
-      ]
-    },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
-    "isRequired": true
-  },
-  {
-    "instance": {
-      "key": {
-        "publicId": "set_cookies",
-        "versionId": "1"
-      },
-      "param": [
-        {
-          "key": "allowedCookies",
+          "key": "urls",
           "value": {
             "type": 2,
             "listItem": [
               {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "name"
-                  },
-                  {
-                    "type": 1,
-                    "string": "domain"
-                  },
-                  {
-                    "type": 1,
-                    "string": "path"
-                  },
-                  {
-                    "type": 1,
-                    "string": "secure"
-                  },
-                  {
-                    "type": 1,
-                    "string": "session"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bhcl_id"
-                  },
-                  {
-                    "type": 1,
-                    "string": "*"
-                  },
-                  {
-                    "type": 1,
-                    "string": "*"
-                  },
-                  {
-                    "type": 1,
-                    "string": "any"
-                  },
-                  {
-                    "type": 1,
-                    "string": "any"
-                  }
-                ]
-              },
-              {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "name"
-                  },
-                  {
-                    "type": 1,
-                    "string": "domain"
-                  },
-                  {
-                    "type": 1,
-                    "string": "path"
-                  },
-                  {
-                    "type": 1,
-                    "string": "secure"
-                  },
-                  {
-                    "type": 1,
-                    "string": "session"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "_bhp"
-                  },
-                  {
-                    "type": 1,
-                    "string": "*"
-                  },
-                  {
-                    "type": 1,
-                    "string": "*"
-                  },
-                  {
-                    "type": 1,
-                    "string": "any"
-                  },
-                  {
-                    "type": 1,
-                    "string": "any"
-                  }
-                ]
+                "type": 1,
+                "string": "https://s3.amazonaws.com/beehiiv-adnetwork-production/*"
               }
             ]
-          }
-        }
-      ]
-    },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
-    "isRequired": true
-  },
-  {
-    "instance": {
-      "key": {
-        "publicId": "get_url",
-        "versionId": "1"
-      },
-      "param": [
-        {
-          "key": "urlParts",
-          "value": {
-            "type": 1,
-            "string": "any"
-          }
-        },
-        {
-          "key": "queriesAllowed",
-          "value": {
-            "type": 1,
-            "string": "any"
           }
         }
       ]
@@ -501,6 +377,45 @@ ___WEB_PERMISSIONS___
           "value": {
             "type": 2,
             "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bhpx_sendPixel"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
               {
                 "type": 3,
                 "mapKey": [
@@ -563,7 +478,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "bhpx.q"
+                    "string": "dataLayer"
                   },
                   {
                     "type": 8,
@@ -576,6 +491,45 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bhpx_queue"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   }
                 ]
               }
@@ -592,10 +546,118 @@ ___WEB_PERMISSIONS___
   {
     "instance": {
       "key": {
-        "publicId": "inject_script",
+        "publicId": "get_cookies",
         "versionId": "1"
       },
-      "param": []
+      "param": [
+        {
+          "key": "cookieAccess",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "set_cookies",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "allowedCookies",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "name"
+                  },
+                  {
+                    "type": 1,
+                    "string": "domain"
+                  },
+                  {
+                    "type": 1,
+                    "string": "path"
+                  },
+                  {
+                    "type": 1,
+                    "string": "secure"
+                  },
+                  {
+                    "type": 1,
+                    "string": "session"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "get_url",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "urlParts",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        },
+        {
+          "key": "queriesAllowed",
+          "value": {
+            "type": 1,
+            "string": "any"
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
     },
     "isRequired": true
   }
@@ -608,5 +670,7 @@ scenarios: []
 
 
 ___NOTES___
+
+Updated on 2/5/2025, 9:31:57 AM
 
 Created on 12/23/2024, 2:08:23 PM
