@@ -50,7 +50,7 @@ const makeInteger = require('makeInteger');
 const copyFromWindow = require('copyFromWindow');
 const setInWindow = require('setInWindow');
 
-log('beehiiv pixel v1.1 loaded');
+log('beehiiv pixel v1.2.8 loaded');
 // Constants
 const APIARY_ENDPOINT =
   'https://ingestion.apiary.beehiiv.net/api/v1/ingestion/pixel';
@@ -58,6 +58,7 @@ const APIARY_ENDPOINT =
 const SUPPORT_SCRIPT_URL =
   'https://s3.amazonaws.com/beehiiv-adnetwork-production/pixel-support.js';
 const isSecure = true;
+const EXCLUDED_DOMAINS = ['beehiiv.com', 'staginghiiv.com', 'localhiiv.com'];
 
 const onSuccess = function () {
   log('pixel-support.js loaded');
@@ -124,8 +125,55 @@ function getHostDomain(hostname) {
 }
 
 // Cookie Management
-function getCookieName(host) {
-  return '_bhcl_' + (host || 'www');
+
+function includes(array, value) {
+  for (let i = 0; i < array.length; i++) {
+    if (array[i] === value) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// find cookie for host or www
+// we are no longer appending the host to the _bhcl cookie name
+// so we need to check for no host, followed by current subdomain,
+// then finally www if no host
+// exclude beehiiv.com, staginghiiv.com, and localhiiv.com from
+// this logic since each subdomain is a different publication
+// so the cookies shoudln't be shared
+function findCookieWithHost(name, host, domain) {
+  let cookie;
+  const isExcludedDomain = includes(EXCLUDED_DOMAINS, domain);
+  if (!isExcludedDomain) {
+    cookie = getCookieValues(name)[0];
+  }
+  if (!cookie) {
+    name = name + '_' + host;
+    cookie = getCookieValues(name)[0];
+  }
+  if (!cookie && host !== 'www') {
+    name = name + '_www';
+    cookie = getCookieValues(name)[0];
+  }
+
+  const returnValue = [];
+  returnValue.push(cookie);
+  returnValue.push(name);
+  return returnValue;
+}
+
+function updateBhclCookie(name, value, domain) {
+  const isExcludedDomain = includes(EXCLUDED_DOMAINS, domain);
+  if (!isExcludedDomain) {
+    if (name !== '_bhcl') {
+      // expire old cookie
+      removeCookie(name, domain);
+    }
+    name = '_bhcl'; // override bhcl cookie name for non-beehiiv domains
+  }
+  updateCookie(name, value, domain);
+  log('bhcl_id added to cookie: ' + name);
 }
 
 function updateCookie(name, value, domain) {
@@ -140,6 +188,18 @@ function updateCookie(name, value, domain) {
     });
     log('cookie updated: ' + name + '=' + value);
   }
+}
+
+function removeCookie(name, domain) {
+  const expires = 0;
+  setCookie(name, '', {
+    domain: '.' + domain,
+    path: '/',
+    'max-age': expires,
+    secure: isSecure,
+    sameSite: 'strict'
+  });
+  log('cookie removed: ' + name);
 }
 
 // ID Management
@@ -159,26 +219,30 @@ function get_bhcl_id() {
   let bhcl_id = urlParams.bhcl_id;
   let event = 'pageview';
 
-  const bhclCookieName = getCookieName(host);
-
-  if (bhcl_id) {
-    log('bhcl_id found in params', bhcl_id);
-    updateCookie(bhclCookieName, bhcl_id, domain);
-    event = 'first_visited';
-  } else {
-    bhcl_id = getCookieValues(bhclCookieName)[0];
-    if (!bhcl_id) {
-      log('no bhcl_id found');
-      return [];
-    }
-    log('bhcl_id found in cookie', bhclCookieName, bhcl_id);
-  }
+  const cookieParts = findCookieWithHost('_bhcl', host, domain);
+  const cookie_bhcl_id = cookieParts[0];
+  const cookieName = cookieParts[1];
 
   // Get BHP from cookie or create a new one if not present
   let bhp = getCookieValues('_bhp')[0];
   if (!bhp) {
     bhp = generateUUID();
     updateCookie('_bhp', bhp, domain);
+  }
+
+  if (bhcl_id && bhcl_id !== cookie_bhcl_id) {
+    // if bhcl_id is in query string and not the same as cookie, set event to first_visited
+    event = 'first_visited';
+  } else if (cookie_bhcl_id) {
+    bhcl_id = cookie_bhcl_id;
+    log('bhcl_id found in cookie', cookieName, bhcl_id);
+  }
+  if (bhcl_id) {
+    updateBhclCookie(cookieName, bhcl_id, domain);
+  }
+  if (!bhcl_id) {
+    log('no bhcl_id found');
+    return [];
   }
 
   const parts = bhcl_id.split('_');
@@ -670,6 +734,7 @@ scenarios: []
 
 
 ___NOTES___
+Update on 2/25/2025, 2:23:45 PM
 
 Updated on 2/5/2025, 9:31:57 AM
 
