@@ -2,6 +2,23 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: 258f0bef7ab839708664a5e05a0fa8e875af7c20
+    changeNotes: |2
+      Version 1.2
+
+      Updates how tracking cookies are named. Previously, we appended the host name
+      to the `_bhcl` cookie. This was required as beehiiv.com sites use the subdomain
+      to distinguish between publications. We needed to make sure cookie values were
+      unique to each publication.
+
+      For advertisers, this could be problematic as customer acquisition could be on
+      a different subdomain from conversion. Although in the manual pixel you could
+      specify which host to get the cookie from, this was not possible in the GTM pixel.
+
+      The Pixel now uses the correct cookie name and will automatically use and rename
+      any existing cookies.
+
+  # Older versions
   - sha: 4a5386eb39b866359cb441ece9696ad34593a9a1
     changeNotes: |2
       Version 1.1
@@ -16,7 +33,6 @@ versions:
 
       And finally, after the event is sent to Apiary, it also sends the event to
       the GTM tag queue. All events are prefixed with `bhpx:` like `bhpx:pageview`.
-  # Older versions
   - sha: 8ee8890c4e245890705526ed81d8cd0c6b5249ca
     changeNotes: Updates to tag to match script updates.
   - sha: 19647af5fac39d25b74aad30a535da3325162fca
