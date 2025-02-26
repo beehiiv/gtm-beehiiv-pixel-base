@@ -2,6 +2,13 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: 3b4d580a009fb12c82ec75aaa68912fbf834c211
+    changeNotes: |2
+      Version 1.3
+
+      Queues events until pixel support script is loaded.
+
+  # Older versions
   - sha: 258f0bef7ab839708664a5e05a0fa8e875af7c20
     changeNotes: |2
       Version 1.2
@@ -17,8 +24,6 @@ versions:
 
       The Pixel now uses the correct cookie name and will automatically use and rename
       any existing cookies.
-
-  # Older versions
   - sha: 4a5386eb39b866359cb441ece9696ad34593a9a1
     changeNotes: |2
       Version 1.1
