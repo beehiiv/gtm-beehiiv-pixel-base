@@ -50,7 +50,9 @@ const makeInteger = require('makeInteger');
 const copyFromWindow = require('copyFromWindow');
 const setInWindow = require('setInWindow');
 
-log('beehiiv pixel v1.2.8 loaded');
+const VERSION = 'v1.3.4';
+
+log('beehiiv pixel loaded', VERSION);
 // Constants
 const APIARY_ENDPOINT =
   'https://ingestion.apiary.beehiiv.net/api/v1/ingestion/pixel';
@@ -60,10 +62,26 @@ const SUPPORT_SCRIPT_URL =
 const isSecure = true;
 const EXCLUDED_DOMAINS = ['beehiiv.com', 'staginghiiv.com', 'localhiiv.com'];
 
+let queue = [];
+let supportInitialized = false;
+
 const onSuccess = function () {
   log('pixel-support.js loaded');
   log('sending initial event');
+  supportInitialized = true;
   sendInitialEvent();
+  
+  if (queue.length > 0) {
+    log('processing queue: length =', queue.length);
+  }
+  // process queue
+  for (let i = 0; i < queue.length; i++) {
+    const entry = queue[i];
+    log('#' + (i + 1) + ' event ' + entry.event);
+    bhpx(entry.command, entry.event, entry.options);
+  }
+  // clear queue
+  queue = [];
 };
 
 // inject pixel-support.js then send initial event on success
@@ -172,8 +190,10 @@ function updateBhclCookie(name, value, domain) {
     }
     name = '_bhcl'; // override bhcl cookie name for non-beehiiv domains
   }
-  updateCookie(name, value, domain);
-  log('bhcl_id added to cookie: ' + name);
+  const oldValue = getCookieValues(name)[0];
+  if (oldValue !== value) {
+    updateCookie(name, value, domain);
+  }
 }
 
 function updateCookie(name, value, domain) {
@@ -217,7 +237,6 @@ function get_bhcl_id() {
 
   const urlParams = parseUrlParams(getUrl());
   let bhcl_id = urlParams.bhcl_id;
-  let event = 'pageview';
 
   const cookieParts = findCookieWithHost('_bhcl', host, domain);
   const cookie_bhcl_id = cookieParts[0];
@@ -230,20 +249,30 @@ function get_bhcl_id() {
     updateCookie('_bhp', bhp, domain);
   }
 
-  if (bhcl_id && bhcl_id !== cookie_bhcl_id) {
-    // if bhcl_id is in query string and not the same as cookie, set event to first_visited
-    event = 'first_visited';
-  } else if (cookie_bhcl_id) {
-    bhcl_id = cookie_bhcl_id;
-    log('bhcl_id found in cookie', cookieName, bhcl_id);
-  }
+  
+// If neither bhcl_id nor cookie_bhcl_id exists, log and return early
+if (!bhcl_id && !cookie_bhcl_id) {
+  log('no bhcl_id found');
+  return [];
+}
   if (bhcl_id) {
-    updateBhclCookie(cookieName, bhcl_id, domain);
+    log('bhcl_id in querystring: ' + bhcl_id);
   }
-  if (!bhcl_id) {
-    log('no bhcl_id found');
-    return [];
+  if (cookie_bhcl_id) {
+    log('bhcl_id in cookie: ' + cookieName + '=' + cookie_bhcl_id);
   }
+
+  // Determine the event: 'first_visited' if bhcl_id is present and differs from cookie_bhcl_id or cookie is absent
+let event = (bhcl_id && (!cookie_bhcl_id || cookie_bhcl_id !== bhcl_id)) ? 'first_visited' : 'pageview';
+
+  if (bhcl_id && cookie_bhcl_id && bhcl_id != cookie_bhcl_id) {
+    log('bhcl_id different than cookie: event=' + event);
+  }
+
+  // final bhcl_id is from query string or cookie
+  bhcl_id = bhcl_id || cookie_bhcl_id;
+
+  updateBhclCookie(cookieName, bhcl_id, domain);
 
   const parts = bhcl_id.split('_');
   const ad_network_placement_id = parts[0];
@@ -311,6 +340,7 @@ function sendEvent(
       data.gtmOnFailure
     );
   } else {
+    log('ERROR: bhpx_sendPixel not found');
     data.gtmOnFailure();
   }
 }
@@ -318,7 +348,7 @@ function sendEvent(
 function sendTagEvent(event, payload) {
   return () => {
     const tagEvent = 'bhpx:' + event;
-    log('sending tag event to GTM', tagEvent);
+    log('sending tag event to GTM');
     bhpx_queue('event', tagEvent, payload);
     data.gtmOnSuccess();
   };
@@ -341,6 +371,12 @@ function bhpx(command, event, options) {
     return;
   }
 
+  if (!supportInitialized) {
+    log('adding ' + event + ' event to queue');
+    queue.push({ command: command, event: event, options: options });
+    return;
+  }
+  
   const bhcl_result = get_bhcl_id();
   if (!bhcl_result || bhcl_result.length < 2) {
     log('bhpx: failed to get bhcl_id');
@@ -734,8 +770,9 @@ scenarios: []
 
 
 ___NOTES___
-Update on 2/25/2025, 2:23:45 PM
 
 Updated on 2/5/2025, 9:31:57 AM
 
 Created on 12/23/2024, 2:08:23 PM
+
+
