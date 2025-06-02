@@ -2,13 +2,19 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: d3e6cdcf554baab54d77cadd5d2c2f539b2e7787
+    changeNotes: |2
+      Version 2.0
+
+      New Pixel V2 template. If you are migrating from Pixel V1 (Base Pixel),
+      please see the README for details.
+
+  # Older versions
   - sha: 3b4d580a009fb12c82ec75aaa68912fbf834c211
     changeNotes: |2
       Version 1.3
 
       Queues events until pixel support script is loaded.
-
-  # Older versions
   - sha: 258f0bef7ab839708664a5e05a0fa8e875af7c20
     changeNotes: |2
       Version 1.2
