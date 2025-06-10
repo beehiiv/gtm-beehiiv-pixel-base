@@ -3,7 +3,7 @@ import md5 from 'js-md5';
 ((window, document) => {
   // Get the queue that was created by the base script
   const bhpx = window.bhpx;
-  const queue = bhpx.queue;
+  const queue = bhpx.queue || [];
 
   let _pixelId = ''; // pixelId will be set during initialization
   const isSecure = true;
