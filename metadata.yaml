@@ -4,6 +4,16 @@ versions:
   # Latest version
   - sha: 8b6e5a7f127b8d1f12665294edddd050a00d314f
     changeNotes: |2
+      Version 2.0.2
+
+      New Pixel V2 template. If you are migrating from Pixel V1 (Base Pixel),
+      please see the README for details.
+
+      Includes bugfix for duplicate events
+
+  # Older versions
+  - sha: 8b6e5a7f127b8d1f12665294edddd050a00d314f
+    changeNotes: |2
       Version 2.0.1
 
       New Pixel V2 template. If you are migrating from Pixel V1 (Base Pixel),
@@ -11,7 +21,6 @@ versions:
 
       Includes bugfix for initializing Pixel ID
 
-  # Older versions
   - sha: d3e6cdcf554baab54d77cadd5d2c2f539b2e7787
     changeNotes: |2
       Version 2.0
