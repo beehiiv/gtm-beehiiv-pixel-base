@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -ev
+
+rsync -a dist/ ../../client/public/

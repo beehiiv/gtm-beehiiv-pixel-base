@@ -1,0 +1,28 @@
+{
+  "name": "pixel-v2",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "module": "./dist/pixel-v2.js",
+  "scripts": {
+    "build": "./scripts/build_pixeljs",
+    "format": "prettier --write .",
+    "test": "./scripts/run_tests",
+    "upload": "./scripts/upload_to_s3",
+    "run-advertiser": "npm-run-all --parallel run-advertiser:*",
+    "run-advertiser:web": "serve -l 9999",
+    "run-advertiser:caddy": "caddy run"
+  },
+  "dependencies": {
+    "js-md5": "^0.8.3"
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "npm-run-all": "^4.1.5",
+    "patch-package": "^8.0.0",
+    "prettier": "^3.3.3",
+    "publish-to-s3": "^1.0.4",
+    "serve": "^14.2.4",
+    "vite": "6.0.13"
+  }
+}

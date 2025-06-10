@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -ev
+ENV=$1
+copy=$2
+if [[ "$ENV" == "" ]]; then
+  ENV=dev
+fi
+doppler run --project swarm --config "$ENV" -- pnpm vite build
+if [[ "$copy" == "--copy" ]]; then
+  doppler run --project swarm --config "$ENV" -- scripts/upload_to_s3 dist/pixel-v2.js
+fi

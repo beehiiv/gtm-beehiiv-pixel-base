@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Variable to keep track of whether any test failed
+fail_count=0
+
+# List of test cases, one per line
+all_tests=(
+    "no_bhcl_id"
+    "bhcl_id"
+    "bhcl_id_exists"
+    "bhcl_invalid_subsciber_id"
+    "custom_event"
+    "custom_event_different_subdomain"
+    "custom_data"
+    "new_cookie_handling"
+    "new_cookie_handling_conversion"
+)
+
+# Function to run a single test
+run_test() {
+    local test_case=$1
+    echo "Running test case: $test_case"
+    NODE_ENV=test TEST_CASE=$test_case node src/index.js
+    if [[ $? -ne 0 ]]; then
+        echo "Test '$test_case' failed"
+        fail_count=$((fail_count + 1))
+    fi
+    echo "----------------"
+}
+
+# Check if arguments were provided
+if [ $# -eq 0 ]; then
+    # No arguments: run all tests
+    echo "Running all tests..."
+    for test_case in "${all_tests[@]}"; do
+        run_test "$test_case"
+    done
+else
+    # Arguments provided: run only specified tests
+    echo "Running specified tests..."
+    for test_case in "$@"; do
+        run_test "$test_case"
+    done
+fi
+
+echo "Tests complete. $fail_count test(s) failed."
+exit $fail_count
