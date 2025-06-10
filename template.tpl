@@ -1,4 +1,4 @@
-﻿___TERMS_OF_SERVICE___
+___TERMS_OF_SERVICE___
 
 By creating or modifying this file you agree to Google Tag Manager's Community
 Template Gallery Developer Terms of Service available at
@@ -295,7 +295,7 @@ const makeBoolean = (value) => {
   return (value || '').toString() === 'true';
 };
 
-const pixel_id = eventData.pixel_d;
+const pixel_id = eventData.pixel_id;
 
 // Prepare the event data payload
 const payload = {
