@@ -1,4 +1,4 @@
-import md5 from 'https://cdn.jsdelivr.net/npm/js-md5@0.8.3/+esm';
+import md5 from 'js-md5';
 
 ((window, document) => {
   // Get the queue that was created by the base script
