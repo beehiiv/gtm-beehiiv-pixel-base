@@ -134,9 +134,14 @@ import md5 from 'js-md5';
         search_string,
         status,
         value_cents,
-        email,
         order_id,
       } = data || {};
+
+      let email = data.email || '';
+      const url = new URL(window.top.location.href);
+      if (!email && url.searchParams.has('email')) {
+        email = url.searchParams.get('email');
+      }
 
       window.bhpx?.debug?.log(`track: ${eventName} ${JSON.stringify(data)}`);
 

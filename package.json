@@ -10,8 +10,8 @@
     "test": "./scripts/run_tests",
     "upload": "./scripts/upload_to_s3",
     "run-advertiser": "npm-run-all --parallel run-advertiser:*",
-    "run-advertiser:web": "serve -l 9999",
-    "run-advertiser:caddy": "caddy run"
+    "run-advertiser:web": "serve ./test -l 9999",
+    "run-advertiser:caddy": "caddy run ./test/Caddyfile"
   },
   "dependencies": {
     "js-md5": "^0.8.3"

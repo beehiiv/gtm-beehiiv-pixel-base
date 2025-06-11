@@ -16,16 +16,16 @@
       // Load the pixel script
       v = b.createElement(e); v.async = !0;
       v.type = 'module';
-      v.src = 'https://beehiiv-adnetwork-production.s3.amazonaws.com/pixel-v2.js';
+      v.src = 'https://beehiiv-adnetwork-staging.s3.amazonaws.com/pixel-v2.js';
       h = b.getElementsByTagName(e)[0];
       h.parentNode.insertBefore(v, h);
     }(window, document, 'script');
 
-    bhpx('init', '16cda8f3-9bbe-4130-836c-81de06d46938', {
+    bhpx('init', '375be604-fbc7-4dd5-a204-4f2ac068e459', {
       trackClientNavigation: true,
       debug: false
     });
-    bhpx('track', 'pageview', { data: { email: 'kiliman@gmail.com', order_id: 'ABC1234' } });
+    bhpx('track', 'pageview');
   </script>
 </head>
 
