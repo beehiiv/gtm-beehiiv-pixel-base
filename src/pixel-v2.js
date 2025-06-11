@@ -196,7 +196,7 @@ import md5 from 'js-md5';
   async function processBatch() {
     if (eventQueue.length === 0) return;
 
-    const batch = eventQueue.splice(0, CONFIG.BATCH_SIZE);
+    const batch = dedupe(eventQueue.splice(0, CONFIG.BATCH_SIZE));
     batchTimeout = null;
 
     try {
@@ -206,6 +206,17 @@ import md5 from 'js-md5';
       // Optionally, re-queue failed events
       eventQueue.unshift(...batch);
     }
+  }
+
+  function dedupe(events) {
+    const seen = new Set();
+    return events.filter((event) => {
+      const { timestamp, landed_timestamp, sent_timestamp, event_id, ...rest } = event
+      const key = JSON.stringify(rest);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   // Enhanced click handling with validation
