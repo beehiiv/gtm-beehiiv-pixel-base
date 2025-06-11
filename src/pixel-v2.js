@@ -253,7 +253,6 @@ import md5 from 'js-md5';
   function init(pixelId, options = {}) {
     try {
       validatePixelId(pixelId);
-      console.log('beehiiv Pixel ID:', pixelId);
       _pixelId = pixelId;
 
       const { domain } = getHostDomain();
