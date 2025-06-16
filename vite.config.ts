@@ -12,8 +12,8 @@ export default defineConfig({
     //   transformMixedEsModules: true,
     // },
     lib: {
-      name: 'pixel-v2',
-      formats: ['es'],
+      name: 'pixel_v2',
+      formats: ['iife'],
       entry: './src/pixel-v2.js',
       fileName: () => 'pixel-v2.js',
     },
