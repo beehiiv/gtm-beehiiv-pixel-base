@@ -137,9 +137,14 @@ async function track(eventName, options = {}) {
     } = data || {};
 
     let email = data.email || '';
-    const url = new URL(window.top.location.href);
-    if (!email && url.searchParams.has('email')) {
-      email = url.searchParams.get('email');
+    try {
+      const url = new URL(window.top.location.href);
+      if (!email && url.searchParams.has('email')) {
+        email = url.searchParams.get('email');
+      }
+    } catch {
+      // Ignore errors if URL parsing fails
+      // or if the URL is not accessible due to security restrictions
     }
 
     window.bhpx?.debug?.log(`track: ${eventName} ${JSON.stringify(data)}`);
