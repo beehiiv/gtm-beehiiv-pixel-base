@@ -57,6 +57,8 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
 
 ### Event Settings
 - **Event Name**: Select the type of event you want to track
+- **Email**: Optional, but desirable. Email is hashed before sending to backend.
+- **Order ID**: Optional, but desirable. Used for cross-referencing conversions.
 
 ### Monetary Values
 - **Currency**: Three-letter currency code (e.g., "usd", "eur")
@@ -73,7 +75,6 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
 - Content Type
 - Search String
 - Status
-- Email
 
 ## Usage Examples
 
