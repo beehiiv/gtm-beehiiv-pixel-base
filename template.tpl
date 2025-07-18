@@ -99,6 +99,18 @@ ___TEMPLATE_PARAMETERS___
             "type": "NON_EMPTY"
           }
         ]
+      },
+      {
+        "type": "TEXT",
+        "name": "email",
+        "displayName": "Email address",
+        "simpleValueType": true
+      },
+      {
+        "type": "TEXT",
+        "name": "order_id",
+        "displayName": "Order ID",
+        "simpleValueType": true
       }
     ]
   },
@@ -106,7 +118,7 @@ ___TEMPLATE_PARAMETERS___
     "type": "GROUP",
     "name": "monetaryValues",
     "displayName": "Monetary Values",
-    "groupStyle": "ZIPPY_CLOSED",
+    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "TEXT",
@@ -144,7 +156,7 @@ ___TEMPLATE_PARAMETERS___
     "type": "GROUP",
     "name": "additionalParams",
     "displayName": "Additional Parameters",
-    "groupStyle": "ZIPPY_CLOSED",
+    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "TEXT",
@@ -205,7 +217,7 @@ ___TEMPLATE_PARAMETERS___
     "type": "GROUP",
     "name": "contentParams",
     "displayName": "Content Parameters",
-    "groupStyle": "ZIPPY_CLOSED",
+    "groupStyle": "NO_ZIPPY",
     "subParams": [
       {
         "type": "TEXT",
@@ -242,18 +254,6 @@ ___TEMPLATE_PARAMETERS___
         "type": "TEXT",
         "name": "status",
         "displayName": "Status",
-        "simpleValueType": true
-      },
-      {
-        "type": "TEXT",
-        "name": "email",
-        "displayName": "Email address",
-        "simpleValueType": true
-      },
-      {
-        "type": "TEXT",
-        "name": "order_id",
-        "displayName": "Order ID",
         "simpleValueType": true
       }
     ]
@@ -328,7 +328,7 @@ payload.data = cleanData;
 
 const onSuccess = () => {
   log('pixel-v2.js loaded');
-  
+
   // Get the bhpx function from the window object
   const bhpx = copyFromWindow('bhpx');
   log('onSuccess - bhpx:', bhpx);
@@ -352,7 +352,7 @@ const onSuccess = () => {
       const entry = queue[i];
       log('#' + (i + 1) + ' event ' + entry.event);
       bhpx.callMethod(entry.command, entry.event, entry.options); // Direct function call
-    }    
+    }
     queue = []; // Clear queue
   }
   else {
