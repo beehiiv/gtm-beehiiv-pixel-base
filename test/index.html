@@ -2,31 +2,13 @@
 <html>
 
 <head>
-  <script>
-    !function (f, b, e, h, i, v) {
-      if (f.bhpx) return;
-      i = f.bhpx = function () {
-        i.callMethod ?
-          i.callMethod.apply(i, arguments) : i.queue.push(arguments)
-      };
-      if (!f._bhpx) f._bhpx = i;
-      i.push = i; i.loaded = !0; i.version = '1.0';
-      i.queue = [];
-
-      // Load the pixel script
-      v = b.createElement(e); v.async = !0;
-      v.type = 'module';
-      v.src = 'https://beehiiv-adnetwork-staging.s3.amazonaws.com/pixel-v2.js';
-      h = b.getElementsByTagName(e)[0];
-      h.parentNode.insertBefore(v, h);
-    }(window, document, 'script');
-
-    bhpx('init', '375be604-fbc7-4dd5-a204-4f2ac068e459', {
-      trackClientNavigation: true,
-      debug: false
-    });
-    bhpx('track', 'pageview');
-  </script>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-MF3JQVSR');</script>
+  <!-- End Google Tag Manager -->
 </head>
 
 <body>
@@ -39,6 +21,7 @@
     <a href="/page2">Page 2</a>
     <a href="/page3">Page 3</a>
     <a href="/join">Join</a>
+    <a href="https://google.com">Start for free</a>
   </div>
 
   <h2>Form</h2>
@@ -58,46 +41,12 @@
       });
       console.log(payload)
     });
+
     Array.from(document.querySelectorAll('a')).forEach(function (el) {
       el.addEventListener('click', function (e) {
-        const href = e.target.getAttribute('href');
-        const url = new URL(href, window.location.origin);
-        const currentUrl = new URL(window.location.href);
-        const gtmDebug = currentUrl.searchParams.get('gtm_debug');
-        if (gtmDebug) {
-          url.searchParams.set('gtm_debug', gtmDebug);
-        }
-
-        if (!url.pathname.startsWith('/page')) {
-          e.preventDefault();
-          window.location = url.toString();
-          return;
-        }
-        e.preventDefault();
-        history.pushState({}, '', el.getAttribute('href'));
+        //e.preventDefault();
+        console.log('Link clicked:', el.href);
       });
-    });
-    document.getElementById('btn-send-event').addEventListener('click', function (e) {
-      e.preventDefault();
-      bhpx('track', 'conversion', {
-        data: {
-          "content_category": "dog_treats",
-          "content_ids": [
-            "greenie",
-            "munchables",
-          ],
-          "content_name": "delicious",
-          "content_type": "really tasty",
-          "currency": "usd",
-          "num_items": 444,
-          "predicted_ltv_cents": 35504,
-          "search_string": "hungry",
-          "status": true,
-          "value_cents": 565,
-          "order_id": "1234567890",
-          "email": "kiliman@gmail.com",
-        }
-      })
     });
   </script>
 
