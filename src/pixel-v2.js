@@ -112,7 +112,6 @@ async function track(eventName, options = {}) {
     }
 
     // Normalize event name to lowercase
-    // biome-ignore lint/style/noParameterAssign:
     eventName = eventName.toLowerCase();
     const event_id = generateUUID();
     const timestamp = new Date().getTime();
@@ -521,12 +520,10 @@ function findCookieWithHost(name, host, domain) {
     cookie = findCookie(allCookies, name);
   }
   if (!cookie) {
-    // biome-ignore lint/style/noParameterAssign:
     name = `${name}_${host}`;
     cookie = findCookie(allCookies, name);
   }
   if (!cookie && host !== 'www') {
-    // biome-ignore lint/style/noParameterAssign:
     name = `${name}_www`;
     cookie = findCookie(allCookies, name);
   }
@@ -549,7 +546,6 @@ function updateBHCCookie(name, value, host, domain) {
   const isExcludedDomain = EXCLUDED_DOMAINS.includes(domain);
   if (isExcludedDomain) {
     // append host to beehiiv domains
-    // biome-ignore lint/style/noParameterAssign:
     name = `${name}_${host}`;
   }
   updateCookie(name, value, domain);
