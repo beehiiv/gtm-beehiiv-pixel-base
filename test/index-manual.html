@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+
+<head>
+  <script>
+    !function (f, b, e, h, i, v) {
+      if (f.bhpx) return;
+      i = f.bhpx = function () {
+        i.callMethod ?
+          i.callMethod.apply(i, arguments) : i.queue.push(arguments)
+      };
+      if (!f._bhpx) f._bhpx = i;
+      i.push = i; i.loaded = !0; i.version = '1.0';
+      i.queue = [];
+
+      // Load the pixel script
+      v = b.createElement(e); v.async = !0;
+      v.type = 'module';
+      v.src = 'https://beehiiv-adnetwork-staging.s3.amazonaws.com/pixel-v2.js';
+      h = b.getElementsByTagName(e)[0];
+      h.parentNode.insertBefore(v, h);
+    }(window, document, 'script');
+
+    bhpx('init', '375be604-fbc7-4dd5-a204-4f2ac068e459', {
+      trackClientNavigation: true,
+      debug: false
+    });
+    bhpx('track', 'pageview');
+  </script>
+</head>
+
+<body>
+  <h1>PixelJS V2</h1>
+  <p>PixelJS is a simple pixel tracking library.</p>
+  <div style="display:flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+    <button id="btn-send-event">Send Event</button>
+    <a href="/">Home</a>
+    <a href="/page1">Page 1</a>
+    <a href="/page2">Page 2</a>
+    <a href="/page3">Page 3</a>
+    <a href="/join">Join</a>
+    <a href="welcome.html">Start for free</a>
+  </div>
+
+  <h2>Form</h2>
+  <form method="post">
+    <input type="text" name="name" placeholder="Name" />
+    <input type="email" name="email" placeholder="Email" />
+    <input type="submit" value="Submit" />
+  </form>
+
+  <script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = new FormData(e.target);
+      var payload = {};
+      data.forEach(function (value, key) {
+        payload[key] = value;
+      });
+      console.log(payload)
+    });
+    Array.from(document.querySelectorAll('a')).forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        const href = e.target.getAttribute('href');
+        const url = new URL(href, window.location.origin);
+        const currentUrl = new URL(window.location.href);
+        const gtmDebug = currentUrl.searchParams.get('gtm_debug');
+        if (gtmDebug) {
+          url.searchParams.set('gtm_debug', gtmDebug);
+        }
+
+        if (!url.pathname.startsWith('/page')) {
+          e.preventDefault();
+          window.location = url.toString();
+          return;
+        }
+        e.preventDefault();
+        history.pushState({}, '', el.getAttribute('href'));
+      });
+    });
+    document.getElementById('btn-send-event').addEventListener('click', function (e) {
+      e.preventDefault();
+      bhpx('track', 'conversion', {
+        data: {
+          "content_category": "dog_treats",
+          "content_ids": [
+            "greenie",
+            "munchables",
+          ],
+          "content_name": "delicious",
+          "content_type": "really tasty",
+          "currency": "usd",
+          "num_items": 444,
+          "predicted_ltv_cents": 35504,
+          "search_string": "hungry",
+          "status": true,
+          "value_cents": 565,
+          "order_id": "1234567890",
+          "email": "kiliman@gmail.com",
+        }
+      })
+    });
+  </script>
+
+</body>
+
+</html>
