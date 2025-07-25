@@ -18,6 +18,7 @@ const CONFIG = {
   RATE_LIMIT_INTERVAL: 0,
   BATCH_SIZE: 1,
   BATCH_INTERVAL: 1000,
+  DEDUPE_TIME_PERIOD: 15 * 60, // 15 minutes in seconds
 };
 
 // Rate limiter implementation
@@ -114,7 +115,7 @@ async function track(eventName, options = {}) {
     // Normalize event name to lowercase
     eventName = eventName.toLowerCase();
     const event_id = generateUUID();
-    const timestamp = new Date().getTime();
+    const timestamp = Date.now();
     const { host, domain } = getHostDomain();
     const bhc = getCookie('_bhc', host, domain) || '';
     const bhp = getCookie('_bhp', host, domain) || '';
@@ -200,6 +201,9 @@ async function processBatch() {
   if (eventQueue.length === 0) return;
 
   const batch = dedupe(eventQueue.splice(0, CONFIG.BATCH_SIZE));
+  // If no events left after deduplication, exit early
+  if (batch.length === 0) return;
+
   batchTimeout = null;
 
   try {
@@ -212,14 +216,76 @@ async function processBatch() {
 }
 
 function dedupe(events) {
+  const STORAGE_KEY = 'bhpx_processed_events';
+  const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
+
+  // Load existing processed events from localStorage
+  let processedEvents = [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      processedEvents = JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('Failed to load processed events from localStorage:', error);
+    processedEvents = [];
+  }
+
+  // Filter out events already processed within the dedupe time period
   const seen = new Set();
-  return events.filter((event) => {
+  const filteredEvents = events.filter((event) => {
+    // biome-ignore lint/correctness/noUnusedVariables: we're ignoring these properties
     const { timestamp, landed_timestamp, sent_timestamp, event_id, ...rest } = event;
     const key = JSON.stringify(rest);
-    if (seen.has(key)) return false;
+
+    // Check current batch
+    if (seen.has(key)) {
+      window?.bhpx?.debug?.log(`Event ${event_id} ${event.event} is a duplicate in the current batch and will be skipped.`);
+      return false;
+    }
+
+    // Check against previously processed events
+    const dupeEvents = processedEvents.filter((processedEvent) => {
+      const timeDiff = (currentTime - processedEvent.processedAt)
+      return timeDiff < CONFIG.DEDUPE_TIME_PERIOD && processedEvent.key === key
+    }).map((processedEvent) => processedEvent);
+
+
+    if (dupeEvents.length > 0) {
+      const event = dupeEvents[0];
+      window?.bhpx?.debug?.log(`Event ${event_id} ${rest.event} is a duplicate since ${(currentTime - event.processedAt)} seconds ago and will be skipped.`);
+      return false;
+    }
+
     seen.add(key);
     return true;
   });
+
+  // Store newly processed events with timestamps
+  const newProcessedEvents = filteredEvents.map((event) => {
+    // biome-ignore lint/correctness/noUnusedVariables: we're ignoring these properties
+    const { timestamp, landed_timestamp, sent_timestamp, event_id, ...rest } = event;
+    return {
+      key: JSON.stringify(rest),
+      processedAt: currentTime, // Store as seconds
+    };
+  });
+
+  const allProcessedEvents = [...processedEvents, ...newProcessedEvents]
+    .filter((event) => {
+      // Remove events processed more than CONFIG.DEDUPE_TIME_PERIOD seconds ago
+      if (event.processedAt < currentTime - CONFIG.DEDUPE_TIME_PERIOD) {
+        return false;
+      }
+      return true;
+    });
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(allProcessedEvents)));
+  } catch (error) {
+    console.warn('Failed to save processed events to localStorage:', error);
+  }
+
+  return filteredEvents;
 }
 
 // Enhanced click handling with validation
