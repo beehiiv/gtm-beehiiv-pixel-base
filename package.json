@@ -11,7 +11,7 @@
     "upload": "./scripts/upload_to_s3",
     "run-advertiser": "npm-run-all --parallel run-advertiser:*",
     "run-advertiser:web": "serve ./test -l 9999",
-    "run-advertiser:caddy": "caddy run ./test/Caddyfile"
+    "run-advertiser:caddy": "caddy run --config ./test/Caddyfile"
   },
   "dependencies": {
     "js-md5": "^0.8.3"
