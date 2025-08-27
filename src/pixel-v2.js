@@ -40,6 +40,13 @@ const eventQueue = [];
 let batchTimeout = null;
 
 // Utility Functions
+function isCrawler() {
+  const ua = navigator.userAgent.toLowerCase();
+  const crawlerRegex =
+    /(bot|crawl|spider|slurp|archiver|indexer|facebookexternalhit|twitterbot|bingpreview|applebot|siteaudit|semrush|ahrefs|mj12bot|seznambot|screaming frog|dotbot)/i;
+  return crawlerRegex.test(ua);
+}
+
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -105,6 +112,11 @@ function validatePixelId(pixelId) {
 // Enhanced tracking with batching support
 async function track(eventName, options = {}) {
   try {
+    if (isCrawler()) {
+      // don't run the pixel for known crawlers
+      return;
+    }
+
     if (!_pixelId) {
       throw new Error('Pixel ID not initialized');
     }
@@ -241,7 +253,9 @@ function dedupe(events) {
 
     // Check current batch
     if (seen.has(eventHash)) {
-      window?.bhpx?.debug?.log(`Event ${event_id} ${event.event} is a duplicate in the current batch and will be skipped.`);
+      window?.bhpx?.debug?.log(
+        `Event ${event_id} ${event.event} is a duplicate in the current batch and will be skipped.`,
+      );
       return false;
     }
 
@@ -251,7 +265,9 @@ function dedupe(events) {
       const timeDiff = currentTime - processedAt;
 
       if (timeDiff < CONFIG.DEDUPE_TIME_PERIOD) {
-        window?.bhpx?.debug?.log(`Event ${event_id} ${rest.event} is a duplicate since ${timeDiff} seconds ago and will be skipped.`);
+        window?.bhpx?.debug?.log(
+          `Event ${event_id} ${rest.event} is a duplicate since ${timeDiff} seconds ago and will be skipped.`,
+        );
         return false;
       }
     }
