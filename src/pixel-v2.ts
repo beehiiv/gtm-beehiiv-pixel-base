@@ -1,4 +1,5 @@
 import { md5 } from 'js-md5';
+import { version as SCRIPT_VERSION } from '../package.json';
 
 // Extend Window interface for our globals
 declare global {
@@ -66,6 +67,7 @@ interface PixelPayload {
   event_id: string;
   url: string;
   user_agent: string;
+  script_version: string;
   content_category?: string;
   content_ids?: string[];
   content_name?: string;
@@ -278,6 +280,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
       event_id,
       url: window.location.href,
       user_agent: window.navigator.userAgent,
+      script_version: SCRIPT_VERSION,
       // custom data properties are optional
       content_category,
       content_ids,
@@ -444,6 +447,8 @@ function init(pixelId: string, options: InitOptions = {}): void {
   try {
     validatePixelId(pixelId);
     _pixelId = pixelId;
+
+    console.log(`beehiiv pixel v${SCRIPT_VERSION} initialized`);
 
     const { host, domain } = getHostDomain();
 
