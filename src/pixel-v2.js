@@ -340,10 +340,10 @@ function init(pixelId, options = {}) {
     validatePixelId(pixelId);
     _pixelId = pixelId;
 
-    const { domain } = getHostDomain();
+    const { host, domain } = getHostDomain();
 
     // Set user identification cookie if not exists
-    if (!getCookie('_bhp')) {
+    if (!getCookie('_bhp', host, domain)) {
       updateCookie('_bhp', generateUUID(), domain);
     }
 
