@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
       minify: false,
       target: 'esnext',
       lib: {
-        entry: `./src/${entryName}.js`,
+        // pixel-v2 is TypeScript, pixel-js is JavaScript
+        entry: `./src/${entryName}${entryName === 'pixel-v2' ? '.ts' : '.js'}`,
         formats: ['iife'],
         name: globalName,
         fileName: () => `${entryName}.js`,
