@@ -67,8 +67,7 @@ interface PixelPayload {
   event_id: string;
   url: string;
   user_agent: string;
-  // TODO: uncomment when Apiary schema is updated
-  // script_version: string;
+  script_version: string;
   content_category?: string;
   content_ids?: string[];
   content_name?: string;
@@ -83,8 +82,7 @@ interface PixelPayload {
   email_hash_sha1: string;
   email_hash_md5: string;
   order_id?: string;
-  // TODO: uncomment when Apiary schema is updated
-  // email_id?: string;
+  email_id?: string;
 }
 
 interface EmailHashes {
@@ -236,9 +234,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
     const { host, domain } = getHostDomain();
     const bhc = getCookie('_bhc', host, domain) || '';
     const bhp = getCookie('_bhp', host, domain) || '';
-    // TODO: restore email_id when Apiary schema is updated
-    // const [ad_network_placement_id, subscriber_id, email_id] = bhc.split('_');
-    const [ad_network_placement_id, subscriber_id] = bhc.split('_');
+    const [ad_network_placement_id, subscriber_id, email_id] = bhc.split('_');
 
     const data = options.data || {};
     const {
@@ -285,8 +281,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
       event_id,
       url: window.location.href,
       user_agent: window.navigator.userAgent,
-      // TODO: uncomment when Apiary schema is updated
-      // script_version: SCRIPT_VERSION,
+      script_version: SCRIPT_VERSION,
       // custom data properties are optional
       content_category,
       content_ids,
@@ -302,8 +297,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
       email_hash_sha1,
       email_hash_md5,
       order_id,
-      // TODO: uncomment when Apiary schema is updated
-      // email_id,
+      email_id,
     };
 
     // Add to batch queue
