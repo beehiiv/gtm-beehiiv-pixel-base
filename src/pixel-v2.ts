@@ -82,6 +82,7 @@ interface PixelPayload {
   email_hash_sha1: string;
   email_hash_md5: string;
   order_id?: string;
+  email_id?: string;
 }
 
 interface EmailHashes {
@@ -233,7 +234,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
     const { host, domain } = getHostDomain();
     const bhc = getCookie('_bhc', host, domain) || '';
     const bhp = getCookie('_bhp', host, domain) || '';
-    const [ad_network_placement_id, subscriber_id] = bhc.split('_');
+    const [ad_network_placement_id, subscriber_id, email_id] = bhc.split('_');
 
     const data = options.data || {};
     const {
@@ -296,6 +297,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
       email_hash_sha1,
       email_hash_md5,
       order_id,
+      email_id,
     };
 
     // Add to batch queue
