@@ -271,7 +271,7 @@ const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
 const copyFromWindow = require('copyFromWindow');
 
-const VERSION = 'v2.0.1';
+const VERSION = 'v2.2.0';
 
 log('beehiiv pixel loaded', VERSION);
 // Constants
@@ -299,6 +299,7 @@ const pixel_id = eventData.pixel_id;
 
 // Prepare the event data payload
 const payload = {
+  pixelId: pixel_id,
   data: {
     currency: eventData.currency,
     value_cents: eventData.value_cents ? makeInteger(eventData.value_cents) : undefined,
