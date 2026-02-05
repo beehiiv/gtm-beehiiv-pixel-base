@@ -37,6 +37,7 @@ interface HostDomain {
 }
 
 interface TrackOptions {
+  pixelId?: string;
   data?: TrackData;
 }
 
@@ -220,8 +221,16 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
       return;
     }
 
-    if (!_pixelId) {
+    // Use pixelId from options if provided, otherwise fall back to initialized _pixelId
+    const pixelId = options.pixelId || _pixelId;
+
+    if (!pixelId) {
       throw new Error('Pixel ID not initialized');
+    }
+
+    // Validate pixelId if provided in options
+    if (options.pixelId) {
+      validatePixelId(options.pixelId);
     }
     if (!eventName || typeof eventName !== 'string') {
       throw new Error('Invalid event name');
@@ -270,7 +279,7 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
     const { email_hash_sha256, email_hash_sha1, email_hash_md5 } = await hashEmail(email);
 
     const payload: PixelPayload = {
-      pixel_id: _pixelId,
+      pixel_id: pixelId,
       ad_network_placement_id: ad_network_placement_id || '',
       subscriber_id: subscriber_id || '',
       profile_id: bhp, // anonymous profile id
