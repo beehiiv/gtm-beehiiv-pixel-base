@@ -2,6 +2,18 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: 2a856f4b356433ba8221b3a6b04de46114179369
+    changeNotes: |2
+      Version 2.2.0
+
+      Support multiple pixel IDs per GTM container. Each track call now
+      passes its configured pixel ID explicitly, so advertisers with
+      multiple beehiiv pixels in a single GTM container get correct
+      attribution for each event.
+
+      Also adds debug logging (gated behind init debug flag) and a
+      disableDedupe option for local development.
+
   - sha: c89febc7f3c67a4b76d50a3d2882a556050ed53c
     changeNotes: |2
       Version 2.0.3
