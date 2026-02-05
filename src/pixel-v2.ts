@@ -95,6 +95,7 @@ interface EmailHashes {
 interface InitOptions {
   autoConfig?: boolean;
   debug?: boolean;
+  disableDedupe?: boolean;
   trackClientNavigation?: boolean;
   batchSize?: number;
   batchInterval?: number;
@@ -123,7 +124,16 @@ const CONFIG = {
   BATCH_SIZE: 1,
   BATCH_INTERVAL: 1000,
   DEDUPE_TIME_PERIOD: 15 * 60, // 15 minutes in seconds
+  DISABLE_DEDUPE: false,
+  DEBUG: false,
 };
+
+// Debug logger — silent by default, enable via init({ debug: true })
+function debugLog(...args: unknown[]): void {
+  if (CONFIG.DEBUG) {
+    console.log('[bhpx]', ...args);
+  }
+}
 
 // Rate limiter implementation
 const rateLimiter = {
@@ -223,8 +233,10 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
 
     // Use pixelId from options if provided, otherwise fall back to initialized _pixelId
     const pixelId = options.pixelId || _pixelId;
+    debugLog(`track(): event=${eventName}, options.pixelId=${options.pixelId}, _pixelId=${_pixelId}, resolved pixelId=${pixelId}`);
 
     if (!pixelId) {
+      debugLog('track(): no pixelId available!');
       throw new Error('Pixel ID not initialized');
     }
 
@@ -310,12 +322,16 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
     };
 
     // Add to batch queue
+    debugLog(`track(): adding to eventQueue, current length=${eventQueue.length}, BATCH_SIZE=${CONFIG.BATCH_SIZE}`);
     eventQueue.push(payload);
+    debugLog(`track(): eventQueue length after push=${eventQueue.length}, batchTimeout=${batchTimeout ? 'active' : 'null'}`);
 
     // Set up batch processing if not already scheduled
     if (!batchTimeout && eventQueue.length < CONFIG.BATCH_SIZE) {
+      debugLog(`track(): scheduling batch in ${CONFIG.BATCH_INTERVAL}ms`);
       batchTimeout = setTimeout(processBatch, CONFIG.BATCH_INTERVAL);
     } else if (eventQueue.length >= CONFIG.BATCH_SIZE) {
+      debugLog('track(): batch size reached, processing immediately');
       await processBatch();
     }
   } catch (error) {
@@ -327,15 +343,18 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
 }
 
 async function processBatch(): Promise<void> {
+  debugLog(`processBatch(): eventQueue length=${eventQueue.length}`);
   if (eventQueue.length === 0) return;
 
   const batch = dedupe(eventQueue.splice(0, CONFIG.BATCH_SIZE));
+  debugLog(`processBatch(): after dedupe, batch length=${batch.length}`);
   // If no events left after deduplication, exit early
   if (batch.length === 0) return;
 
   batchTimeout = null;
 
   try {
+    debugLog(`processBatch(): sending ${batch.length} event(s) to server`, batch.map(e => ({ event: e.event, pixel_id: e.pixel_id })));
     sendToServer(batch);
   } catch (error) {
     console.error('Failed to process batch:', error);
@@ -345,6 +364,10 @@ async function processBatch(): Promise<void> {
 }
 
 function dedupe(events: PixelPayload[]): PixelPayload[] {
+  if (CONFIG.DISABLE_DEDUPE) {
+    debugLog('dedupe: DISABLED — passing all events through');
+    return events;
+  }
   const STORAGE_KEY = 'bhpx_processed_events';
   const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
 
@@ -455,6 +478,8 @@ function handleClickIdentification(): void {
   }
 }
 
+console.log(`beehiiv pixel v${SCRIPT_VERSION} loaded`);
+
 // Enhanced initialization with validation and cleanup
 function init(pixelId: string, options: InitOptions = {}): void {
   try {
@@ -476,6 +501,7 @@ function init(pixelId: string, options: InitOptions = {}): void {
     const defaultConfig: Required<InitOptions> = {
       autoConfig: true,
       debug: false,
+      disableDedupe: false,
       trackClientNavigation: true,
       batchSize: CONFIG.BATCH_SIZE,
       batchInterval: CONFIG.BATCH_INTERVAL,
@@ -489,6 +515,8 @@ function init(pixelId: string, options: InitOptions = {}): void {
       BATCH_SIZE: config.batchSize,
       BATCH_INTERVAL: config.batchInterval,
       RETRY_ATTEMPTS: config.retryAttempts,
+      DISABLE_DEDUPE: config.disableDedupe,
+      DEBUG: config.debug,
     });
 
     if (config.trackClientNavigation) {
@@ -509,13 +537,17 @@ bhpx.callMethod = (...rest: unknown[]): void => {
   const method = args[0] as string;
   const params = args.slice(1);
 
+  debugLog(`callMethod: method=${method}`, 'params:', params);
+
   switch (method) {
     case 'init': {
+      debugLog(`init: pixelId=${params[0]}`);
       init(params[0] as string, params[1] as InitOptions);
       break;
     }
     case 'track': {
       const trackFn = window.bhp?.track || track;
+      debugLog(`track: event=${params[0]}`, 'options:', params[1], 'using:', window.bhp?.track ? 'window.bhp.track' : 'track');
       trackFn(params[0] as string, params[1] as TrackOptions);
       break;
     }
@@ -526,9 +558,11 @@ bhpx.callMethod = (...rest: unknown[]): void => {
 };
 
 // Process queued commands
+debugLog(`processing ${queue.length} queued command(s)`);
 while (queue.length > 0) {
   const cmd = queue.shift();
   if (cmd) {
+    debugLog('dequeuing command:', cmd);
     bhpx.callMethod.apply(null, cmd);
   }
 }
