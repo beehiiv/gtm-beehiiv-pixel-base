@@ -478,7 +478,7 @@ function handleClickIdentification(): void {
   }
 }
 
-console.log(`beehiiv pixel v${SCRIPT_VERSION} loaded`);
+debugLog(`beehiiv pixel v${SCRIPT_VERSION} loaded`);
 
 // Enhanced initialization with validation and cleanup
 function init(pixelId: string, options: InitOptions = {}): void {
@@ -486,7 +486,7 @@ function init(pixelId: string, options: InitOptions = {}): void {
     validatePixelId(pixelId);
     _pixelId = pixelId;
 
-    console.log(`beehiiv pixel v${SCRIPT_VERSION} initialized`);
+    debugLog(`beehiiv pixel v${SCRIPT_VERSION} initialized`);
 
     const { host, domain } = getHostDomain();
 
@@ -767,7 +767,7 @@ function updateBHCCookie(name: string, value: string, host: string, domain: stri
     name = `${name}_${host}`;
   }
   updateCookie(name, value, domain);
-  console.log(`bhcl_id added to cookie: ${name}`);
+  debugLog(`bhcl_id added to cookie: ${name}`);
 }
 
 function updateCookie(name: string, value: string, domain: string): void {
