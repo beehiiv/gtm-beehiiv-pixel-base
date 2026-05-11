@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
   const entryName = process.env.VITE_BUILD_ENTRY || 'pixel-v2'; // Default to pixel-v2
-  const globalName = entryName.replace('-', '_'); // Convert pixel-v1 to pixel_v1 for global name
+  const globalName = entryName.replace(/-/g, '_'); // Convert pixel-v1 to pixel_v1 for global name
+  // pixel-js is legacy JavaScript; everything else is TypeScript
+  const ext = entryName === 'pixel-js' ? '.js' : '.ts';
   console.log(`Building ${entryName} with global name ${globalName} in ${mode} mode`);
   return {
     define: {
@@ -14,8 +16,7 @@ export default defineConfig(({ mode }) => {
       minify: false,
       target: 'esnext',
       lib: {
-        // pixel-v2 is TypeScript, pixel-js is JavaScript
-        entry: `./src/${entryName}${entryName === 'pixel-v2' ? '.ts' : '.js'}`,
+        entry: `./src/${entryName}${ext}`,
         formats: ['iife'],
         name: globalName,
         fileName: () => `${entryName}.js`,
