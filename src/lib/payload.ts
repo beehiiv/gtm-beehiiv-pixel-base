@@ -1,7 +1,7 @@
 import type { CookieJar } from './cookies';
 import { hashEmail } from './email-hash';
 import type { PixelPayload, TrackData } from './types';
-import { generateUUID, getInt } from './utils';
+import { generateUUID, getInt, isValidUUID } from './utils';
 
 export interface BuildPayloadContext {
   pixelId: string;
@@ -21,7 +21,14 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   const timestamp = Date.now();
 
   const [bhc, bhp] = await Promise.all([ctx.cookies.get('_bhc'), ctx.cookies.get('_bhp')]);
-  const [ad_network_placement_id, subscriber_id, email_address_id] = bhc.split('_');
+  // _bhc is `<placement>_<subscriber>_<email_address>`. If a click URL ships
+  // with unsubstituted template placeholders (e.g. `?bhcl_id={UUID}_{SUBSCRIBER}_{ID}`),
+  // we end up with literal "SUBSCRIBER"/"ID" strings here. Drop anything that
+  // isn't a real UUID so the backend's UUID validator doesn't reject the event.
+  const [rawPlacement, rawSubscriber, rawEmail] = bhc.split('_');
+  const ad_network_placement_id = isValidUUID(rawPlacement) ? rawPlacement : '';
+  const subscriber_id = isValidUUID(rawSubscriber) ? rawSubscriber : '';
+  const email_address_id = isValidUUID(rawEmail) ? rawEmail : undefined;
 
   // Email comes either from explicit data, or as a URL query param fallback
   // (advertisers sometimes pass email in the conversion URL).
@@ -39,8 +46,8 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
 
   return {
     pixel_id: ctx.pixelId,
-    ad_network_placement_id: ad_network_placement_id || '',
-    subscriber_id: subscriber_id || '',
+    ad_network_placement_id,
+    subscriber_id,
     profile_id: bhp,
     event: ctx.eventName,
     timestamp,

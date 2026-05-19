@@ -13,10 +13,21 @@ export function isCrawler(): boolean {
   return crawlerRegex.test(ua);
 }
 
+// Coerces to an integer. Numbers are rounded — `32.63 * 100 = 3263.0000000000005`
+// would otherwise sail through and trip the backend's decimal validator.
 export function getInt(s: number | string | undefined): number | undefined {
-  if (typeof s === 'number') return s;
-  if (typeof s === 'string') return Number.parseInt(s, 10);
+  if (typeof s === 'number') return Number.isFinite(s) ? Math.round(s) : undefined;
+  if (typeof s === 'string') {
+    const n = Number.parseInt(s, 10);
+    return Number.isNaN(n) ? undefined : n;
+  }
   return undefined;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidUUID(s: string | undefined): boolean {
+  return !!s && UUID_RE.test(s);
 }
 
 export function validatePixelId(pixelId: string): boolean {
