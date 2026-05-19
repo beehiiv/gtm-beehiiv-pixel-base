@@ -1,10 +1,17 @@
 import { version as SCRIPT_VERSION } from '../package.json';
 import type { CookieJar, CookieName } from './lib/cookies';
 import { parseClickId } from './lib/cookies';
+import { SUPPORTED_EVENTS, isSupportedEvent } from './lib/events';
 import { buildPayload } from './lib/payload';
 import { sendToApiary } from './lib/transport';
 import type { TrackData } from './lib/types';
 import { generateUUID } from './lib/utils';
+
+// Injected at the top of the IIFE by vite.config.ts `rollupOptions.output.intro`.
+// We declare it here so TypeScript knows it exists in scope; the real `const`
+// declaration only appears in the built bundle, near the `version` constant
+// where it's easy for advertisers to find and edit.
+declare const pixelId: string;
 
 // Shopify Custom Pixel sandbox globals. These don't exist anywhere else, so
 // declaring them ambient keeps the rest of the file plain TypeScript.
@@ -35,10 +42,6 @@ interface ShopifyEvent {
     };
   };
 }
-
-// IMPORTANT: Replace PIXEL_ID with the value from your beehiiv Advertiser Portal
-// before pasting this snippet into Shopify's Customer Events / Custom Pixel UI.
-const PIXEL_ID = 'PIXEL_ID';
 
 // Adapter for Shopify's async browser.cookie API. Naming is plain (_bhc / _bhp)
 // because Shopify storefronts aren't on beehiiv-owned domains, so the
@@ -72,12 +75,20 @@ async function captureClickIdFromUrl(url: string | undefined): Promise<void> {
 
 async function track(eventName: string, event: ShopifyEvent, data: TrackData): Promise<void> {
   try {
+    const normalized = eventName.toLowerCase();
+    if (!isSupportedEvent(normalized)) {
+      console.warn(
+        `[bhpx-shopify] unsupported event "${eventName}" — must be one of: ${SUPPORTED_EVENTS.join(', ')}`,
+      );
+      return;
+    }
+
     const url = event.context?.document?.location?.href || '';
     const userAgent = event.context?.navigator?.userAgent || '';
 
     const payload = await buildPayload({
-      pixelId: PIXEL_ID,
-      eventName: eventName.toLowerCase(),
+      pixelId,
+      eventName: normalized,
       url,
       userAgent,
       scriptVersion: SCRIPT_VERSION,

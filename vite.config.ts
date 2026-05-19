@@ -21,6 +21,21 @@ export default defineConfig(({ mode }) => {
         name: globalName,
         fileName: () => `${entryName}.js`,
       },
+      rollupOptions: {
+        output: {
+          // For pixel-shopify, inject the PIXEL_ID placeholder at the very top
+          // of the IIFE body — right after `use strict` and the inlined
+          // `version` constant — so the advertiser can spot it immediately
+          // when they open dist/pixel-shopify.js to paste into Shopify's
+          // Customer Events UI. The intro is wrapped in a banner comment to
+          // call attention to it. Source declares it as `declare const` so
+          // TypeScript is happy without emitting a duplicate.
+          intro:
+            entryName === 'pixel-shopify'
+              ? "  // ─── REPLACE 'PIXEL_ID' BELOW WITH YOUR BEEHIIV PIXEL ID ───\n  const pixelId = 'PIXEL_ID';\n"
+              : undefined,
+        },
+      },
     },
   };
 });
