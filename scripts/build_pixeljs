@@ -12,7 +12,9 @@ fi
 # so it is NOT uploaded to S3.
 doppler run --project swarm --config "$ENV" --command "VITE_BUILD_ENTRY=pixel-v2 pnpm vite build"
 doppler run --project swarm --config "$ENV" --command "VITE_BUILD_ENTRY=pixel-shopify pnpm vite build"
+cp dist/pixel-shopify.js dist/pixel-shopify.js.txt
 
 if [[ "$copy" == "--copy" ]]; then
   doppler run --project swarm --config "$ENV" -- scripts/upload_to_s3 dist/pixel-v2.js
+  doppler run --project swarm --config "$ENV" -- scripts/upload_to_s3 dist/pixel-shopify.js.txt
 fi

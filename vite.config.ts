@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
           // TypeScript is happy without emitting a duplicate.
           intro:
             entryName === 'pixel-shopify'
-              ? "  // ─── REPLACE 'PIXEL_ID' BELOW WITH YOUR BEEHIIV PIXEL ID ───\n  const pixelId = 'PIXEL_ID';\n"
+              ? "  // ** REPLACE 'PIXEL_ID' BELOW WITH YOUR BEEHIIV PIXEL ID **\n  const pixelId = 'PIXEL_ID';\n"
               : undefined,
         },
       },

@@ -2,7 +2,7 @@
 set -ev
 # get filename from $1, default to ./dist/pixel-js.js
 filename=${1:-./dist/pixel-v2.js}
-
+basename=$(basename "$filename")
 if [ "$AWS_ACCESS_KEY_ID" == "" ]; then
   exit 0
 fi
@@ -11,3 +11,4 @@ S3_BUCKET_NAME="beehiiv-adnetwork-$VITE_HEROKU_ENV"
 
 echo "Uploading to S3 $S3_BUCKET_NAME..."
 aws s3 cp "$filename" "s3://$S3_BUCKET_NAME" --acl public-read
+echo "https://$S3_BUCKET_NAME.s3.amazonaws.com/$basename"
