@@ -5,7 +5,14 @@ copy=$2
 if [[ "$ENV" == "" ]]; then
   ENV=dev
 fi
+
+# pixel-v2 is the CDN-hosted script for direct injection / GTM / theme.liquid.
+# pixel-shopify is the paste-in snippet for Shopify Customer Events sandbox —
+# advertisers paste dist/pixel-shopify.js content directly into the Shopify UI,
+# so it is NOT uploaded to S3.
 doppler run --project swarm --config "$ENV" --command "VITE_BUILD_ENTRY=pixel-v2 pnpm vite build"
+doppler run --project swarm --config "$ENV" --command "VITE_BUILD_ENTRY=pixel-shopify pnpm vite build"
+
 if [[ "$copy" == "--copy" ]]; then
   doppler run --project swarm --config "$ENV" -- scripts/upload_to_s3 dist/pixel-v2.js
 fi

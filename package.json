@@ -1,7 +1,7 @@
 {
   "name": "pixel-v2",
   "private": true,
-  "version": "2.2.1",
+  "version": "2.2.3",
   "type": "module",
   "module": "./dist/pixel-v2.js",
   "scripts": {
@@ -12,9 +12,6 @@
     "run-advertiser": "npm-run-all --parallel run-advertiser:*",
     "run-advertiser:web": "serve ./test -l 9999",
     "run-advertiser:caddy": "caddy run --config ./test/Caddyfile"
-  },
-  "dependencies": {
-    "js-md5": "^0.8.3"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
