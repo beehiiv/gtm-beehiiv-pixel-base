@@ -1,7 +1,15 @@
 import type { CookieJar } from './cookies';
 import { hashEmail } from './email-hash';
 import type { PixelPayload, TrackData } from './types';
-import { generateUUID, getInt, isValidUUID } from './utils';
+import {
+  generateUUID,
+  getInt,
+  isValidUUID,
+  toIdString,
+  toStringArray,
+  toStringField,
+  warnIfChanged,
+} from './utils';
 
 export interface BuildPayloadContext {
   pixelId: string;
@@ -16,6 +24,12 @@ export interface BuildPayloadContext {
 // Builds the canonical pixel payload from an event context. Both pixel-v2
 // (direct injection) and pixel-shopify (sandbox) funnel through this so the
 // payload schema can't drift between environments.
+//
+// Sanitization philosophy: be lenient with what callers send (Shopify hands
+// us scalars, GTM hands us strings-pretending-to-be-numbers, etc.) but ship
+// Apiary exactly what it expects. Coerce silently when the meaning is
+// preserved; warn-and-drop only when the data is truly garbage (objects
+// where a primitive belongs, NaN, empty strings).
 export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPayload> {
   const event_id = generateUUID();
   const timestamp = Date.now();
@@ -44,6 +58,31 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
 
   const { email_hash_sha256, email_hash_sha1 } = await hashEmail(email);
 
+  const d = ctx.data;
+  const content_category = toStringField(d.content_category);
+  const content_ids = toStringArray(d.content_ids);
+  const content_name = toStringField(d.content_name);
+  const content_type = toStringField(d.content_type);
+  const currency = toStringField(d.currency);
+  const num_items = getInt(d.num_items);
+  const predicted_ltv_cents = getInt(d.predicted_ltv_cents);
+  const search_string = toStringField(d.search_string);
+  const status = toStringField(d.status);
+  const value_cents = getInt(d.value_cents);
+  const order_id = toIdString(d.order_id);
+
+  warnIfChanged('content_category', d.content_category, content_category);
+  warnIfChanged('content_ids', d.content_ids, content_ids);
+  warnIfChanged('content_name', d.content_name, content_name);
+  warnIfChanged('content_type', d.content_type, content_type);
+  warnIfChanged('currency', d.currency, currency);
+  warnIfChanged('num_items', d.num_items, num_items);
+  warnIfChanged('predicted_ltv_cents', d.predicted_ltv_cents, predicted_ltv_cents);
+  warnIfChanged('search_string', d.search_string, search_string);
+  warnIfChanged('status', d.status, status);
+  warnIfChanged('value_cents', d.value_cents, value_cents);
+  warnIfChanged('order_id', d.order_id, order_id);
+
   return {
     pixel_id: ctx.pixelId,
     ad_network_placement_id,
@@ -57,19 +96,19 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
     url: ctx.url,
     user_agent: ctx.userAgent,
     script_version: ctx.scriptVersion,
-    content_category: ctx.data.content_category,
-    content_ids: ctx.data.content_ids,
-    content_name: ctx.data.content_name,
-    content_type: ctx.data.content_type,
-    currency: ctx.data.currency,
-    num_items: ctx.data.num_items,
-    predicted_ltv_cents: getInt(ctx.data.predicted_ltv_cents),
-    search_string: ctx.data.search_string,
-    status: ctx.data.status,
-    value_cents: getInt(ctx.data.value_cents),
+    content_category,
+    content_ids,
+    content_name,
+    content_type,
+    currency,
+    num_items,
+    predicted_ltv_cents,
+    search_string,
+    status,
+    value_cents,
     email_hash_sha256,
     email_hash_sha1,
-    order_id: ctx.data.order_id,
+    order_id,
     email_address_id,
   };
 }

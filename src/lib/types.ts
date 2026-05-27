@@ -3,7 +3,7 @@
 
 export interface TrackData {
   content_category?: string;
-  content_ids?: string[];
+  content_ids?: string | number | (string | number)[];
   content_name?: string;
   content_type?: string;
   currency?: string;
@@ -12,7 +12,7 @@ export interface TrackData {
   search_string?: string;
   status?: string;
   value_cents?: number | string;
-  order_id?: string;
+  order_id?: string | number;
   email?: string;
 }
 

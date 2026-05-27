@@ -1,6 +1,7 @@
 import { version as SCRIPT_VERSION } from '../package.json';
 import { DocumentCookieJar, getHostDomain, parseClickId } from './lib/cookies';
 import { dedupe } from './lib/dedupe';
+import { SUPPORTED_EVENTS, isSupportedEvent } from './lib/events';
 import { buildPayload } from './lib/payload';
 import { sendToApiary } from './lib/transport';
 import type { InitOptions, PixelPayload, TrackOptions } from './lib/types';
@@ -130,9 +131,17 @@ async function track(eventName: string, options: TrackOptions = {}): Promise<voi
     }
     if (!_cookies) throw new Error('Cookie jar not initialized');
 
+    const normalized = eventName.toLowerCase();
+    if (!isSupportedEvent(normalized)) {
+      console.warn(
+        `[bhpx] unsupported event "${eventName}" — must be one of: ${SUPPORTED_EVENTS.join(', ')}`,
+      );
+      return;
+    }
+
     const payload = await buildPayload({
       pixelId,
-      eventName: eventName.toLowerCase(),
+      eventName: normalized,
       url: window.location.href,
       userAgent: window.navigator.userAgent,
       scriptVersion: SCRIPT_VERSION,
