@@ -1,7 +1,7 @@
 import type { CookieJar } from './cookies';
 import { hashEmail } from './email-hash';
 import type { PixelPayload, TrackData } from './types';
-import { generateUUID, getInt, isValidUUID } from './utils';
+import { generateUUID, getInt, isValidUUID, toIdString, toStringArray } from './utils';
 
 export interface BuildPayloadContext {
   pixelId: string;
@@ -58,7 +58,7 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
     user_agent: ctx.userAgent,
     script_version: ctx.scriptVersion,
     content_category: ctx.data.content_category,
-    content_ids: ctx.data.content_ids,
+    content_ids: toStringArray(ctx.data.content_ids),
     content_name: ctx.data.content_name,
     content_type: ctx.data.content_type,
     currency: ctx.data.currency,
@@ -69,7 +69,7 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
     value_cents: getInt(ctx.data.value_cents),
     email_hash_sha256,
     email_hash_sha1,
-    order_id: ctx.data.order_id,
+    order_id: toIdString(ctx.data.order_id),
     email_address_id,
   };
 }

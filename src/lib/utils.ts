@@ -30,6 +30,26 @@ export function isValidUUID(s: string | undefined): boolean {
   return !!s && UUID_RE.test(s);
 }
 
+// content_ids must ship as an array of strings. Shopify (and some GTM datalayer
+// configs) hand us a single scalar variant id — wrapping it here keeps the
+// backend's array validator happy without forcing every caller to remember.
+export function toStringArray(v: unknown): string[] | undefined {
+  if (v === undefined || v === null) return undefined;
+  const arr = Array.isArray(v) ? v : [v];
+  const out = arr
+    .filter((x) => x !== undefined && x !== null && x !== '')
+    .map((x) => String(x));
+  return out.length ? out : undefined;
+}
+
+// Cast to string. Backend expects order_id as a string but Shopify hands us
+// numeric ids (e.g. 4138434) — those rejected with "is not compatible with the
+// expected field type" until we coerce.
+export function toIdString(v: unknown): string | undefined {
+  if (v === undefined || v === null || v === '') return undefined;
+  return String(v);
+}
+
 export function validatePixelId(pixelId: string): boolean {
   if (!pixelId || typeof pixelId !== 'string') {
     throw new Error('Invalid pixel ID');
