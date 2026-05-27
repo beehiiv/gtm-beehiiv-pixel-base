@@ -33,12 +33,15 @@ export function isValidUUID(s: string | undefined): boolean {
 // content_ids must ship as an array of strings. Shopify (and some GTM datalayer
 // configs) hand us a single scalar variant id — wrapping it here keeps the
 // backend's array validator happy without forcing every caller to remember.
+// Anything that stringifies to "[object Object]" is dropped — that's not a
+// real id, it's a misconfigured datalayer.
 export function toStringArray(v: unknown): string[] | undefined {
   if (v === undefined || v === null) return undefined;
   const arr = Array.isArray(v) ? v : [v];
   const out = arr
     .filter((x) => x !== undefined && x !== null && x !== '')
-    .map((x) => String(x));
+    .map((x) => String(x))
+    .filter((s) => s !== '[object Object]' && s.trim() !== '');
   return out.length ? out : undefined;
 }
 
@@ -47,7 +50,32 @@ export function toStringArray(v: unknown): string[] | undefined {
 // expected field type" until we coerce.
 export function toIdString(v: unknown): string | undefined {
   if (v === undefined || v === null || v === '') return undefined;
-  return String(v);
+  const s = String(v);
+  return s === '[object Object]' ? undefined : s;
+}
+
+// Coerce primitives to a trimmed non-empty string. Used for optional payload
+// fields where Apiary expects a string — content_category, content_name,
+// content_type, currency, search_string, status. Objects/arrays come back
+// as undefined since they have no sensible string projection here.
+export function toStringField(v: unknown): string | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v === 'object') return undefined;
+  const s = String(v).trim();
+  return s.length ? s : undefined;
+}
+
+// Warn (without throwing) when our coercion actually changed the caller's
+// input. Lets advertisers spot misconfigured datalayers in devtools instead
+// of silently shipping massaged data forever.
+export function warnIfChanged(field: string, before: unknown, after: unknown): void {
+  if (before === after) return;
+  if (before === undefined || before === '') return;
+  // Deep-equal arrays of primitives — cheap and good enough for our shapes.
+  if (Array.isArray(before) && Array.isArray(after)) {
+    if (before.length === after.length && before.every((v, i) => v === after[i])) return;
+  }
+  console.warn(`[bhpx] ${field}: coerced ${JSON.stringify(before)} → ${JSON.stringify(after)}`);
 }
 
 export function validatePixelId(pixelId: string): boolean {
