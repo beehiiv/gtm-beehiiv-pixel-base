@@ -8,6 +8,7 @@
     "build": "./scripts/build_pixeljs",
     "format": "prettier --write .",
     "test": "./scripts/run_tests",
+    "test:ingestion": "bun test tests/ingestion-contract.test.ts",
     "upload": "./scripts/upload_to_s3",
     "run-advertiser": "npm-run-all --parallel run-advertiser:*",
     "run-advertiser:web": "serve ./test -l 9999",
