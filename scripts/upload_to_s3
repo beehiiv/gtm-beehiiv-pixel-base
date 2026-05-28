@@ -10,5 +10,14 @@ fi
 S3_BUCKET_NAME="beehiiv-adnetwork-$VITE_HEROKU_ENV"
 
 echo "Uploading to S3 $S3_BUCKET_NAME..."
-aws s3 cp "$filename" "s3://$S3_BUCKET_NAME" --acl public-read
+# Cache-Control of 5 minutes is short enough that pixel hotfixes propagate to
+# advertisers quickly (the v2.2.4 → 2.2.5 rollout took hours because we shipped
+# without this header — heuristic browser caching defaulted to hours/days based
+# on Last-Modified age). 5 min is still long enough that the per-pageview hit
+# on S3 stays trivial. ETag stays unchanged and continues to power 304s on
+# revalidation.
+aws s3 cp "$filename" "s3://$S3_BUCKET_NAME" \
+  --acl public-read \
+  --content-type text/javascript \
+  --cache-control "public, max-age=300"
 echo "https://$S3_BUCKET_NAME.s3.amazonaws.com/$basename"

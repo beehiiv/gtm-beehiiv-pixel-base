@@ -67,7 +67,13 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   const num_items = getInt(d.num_items);
   const predicted_ltv_cents = getInt(d.predicted_ltv_cents);
   const search_string = toStringField(d.search_string);
-  const status = toStringField(d.status);
+  // status is intentionally NOT coerced. Apiary's Avro schema treats this
+  // field as a union that does NOT include string — coercing a boolean
+  // `false` to the string `"false"` (which toStringField would do) caused
+  // every page_viewed event from advertisers passing `status: false` to
+  // get rejected with "status: unknown union type string". Pass it through
+  // verbatim and let Apiary's schema be the source of truth.
+  const status = d.status;
   const value_cents = getInt(d.value_cents);
   const order_id = toIdString(d.order_id);
 
@@ -79,7 +85,6 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   warnIfChanged('num_items', d.num_items, num_items);
   warnIfChanged('predicted_ltv_cents', d.predicted_ltv_cents, predicted_ltv_cents);
   warnIfChanged('search_string', d.search_string, search_string);
-  warnIfChanged('status', d.status, status);
   warnIfChanged('value_cents', d.value_cents, value_cents);
   warnIfChanged('order_id', d.order_id, order_id);
 

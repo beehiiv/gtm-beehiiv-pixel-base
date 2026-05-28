@@ -10,7 +10,7 @@ export interface TrackData {
   num_items?: number;
   predicted_ltv_cents?: number | string;
   search_string?: string;
-  status?: string;
+  status?: boolean | string;
   value_cents?: number | string;
   order_id?: string | number;
   email?: string;
@@ -52,7 +52,7 @@ export interface PixelPayload {
   num_items?: number;
   predicted_ltv_cents?: number;
   search_string?: string;
-  status?: string;
+  status?: boolean | string;
   value_cents?: number;
   email_hash_sha256: string;
   email_hash_sha1: string;
