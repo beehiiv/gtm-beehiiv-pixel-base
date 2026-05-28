@@ -275,7 +275,7 @@ const VERSION = 'v2.2.0';
 
 log('beehiiv pixel loaded', VERSION);
 // Constants
-const APIARY_ENDPOINT = 'https://ingestion.apiary.beehiiv.net/api/v2/ingestion/pixel';
+const APIARY_ENDPOINT = 'https://ingestion.prod.apiarydata.net/api/v2/ingestion/pixel';
 const PIXEL_SCRIPT_URL = 'https://s3.amazonaws.com/beehiiv-adnetwork-production/pixel-v2.js';
 const EXCLUDED_DOMAINS = ['beehiiv.com', 'staginghiiv.com', 'localhiiv.com'];
 

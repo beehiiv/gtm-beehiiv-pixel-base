@@ -71,7 +71,7 @@ This half handles checkout `purchase` attribution.
 ## Testing
 
 1. In the Custom Pixel UI, click **Preview** and complete a test checkout
-2. Open your browser's Network tab and filter for `ingestion.apiary.beehiiv.net`
+2. Open your browser's Network tab and filter for `ingestion.prod.apiarydata.net`
 3. Verify a POST is sent with the expected payload — in particular that `ad_network_placement_id`, `subscriber_id`, and `email_address_id` are populated when you arrived from a beehiiv ad link
 
 If those attribution fields are empty:
@@ -87,7 +87,7 @@ The two-halves architecture above is the only reliable path because click captur
 
 ## Field Reference
 
-Both halves send the same `PixelPayload` shape to `https://ingestion.apiary.beehiiv.net/api/v2/ingestion/pixel`. The fields most relevant to Shopify advertisers:
+Both halves send the same `PixelPayload` shape to `https://ingestion.prod.apiarydata.net/api/v2/ingestion/pixel`. The fields most relevant to Shopify advertisers:
 
 | Field | Source | Notes |
 |---|---|---|
