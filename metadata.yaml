@@ -2,6 +2,15 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: d74d487163bde8db8ed6708a80176a3661796241
+    changeNotes: |2
+      Version 2.2.5
+
+      Housekeeping: corrected the Apiary ingestion endpoint host referenced in
+      the template constant and accompanying documentation. No change to pixel
+      tracking behavior — the loaded pixel script already sends events to the
+      current endpoint.
+
   - sha: 2a856f4b356433ba8221b3a6b04de46114179369
     changeNotes: |2
       Version 2.2.0
