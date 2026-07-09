@@ -170,6 +170,16 @@ describe('Apiary ingestion contract', () => {
     expect(status, body).toBe(201);
   });
 
+  test('hash-shaped value in the email field is routed, not re-hashed', async () => {
+    // The Slack-thread scenario: advertiser puts their sha256 in `email`.
+    // Hashing it would ship sha256(sha256(email)); instead we detect the hex
+    // shape (no `@`) and route it verbatim to email_hash_sha256.
+    const preHashed = 'c'.repeat(64);
+    const { payload, status, body } = await buildAndSubmit({ email: preHashed });
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(status, body).toBe(201);
+  });
+
   test('email_hash_sha256 wins over raw email when both are sent', async () => {
     const preHashed = 'b'.repeat(64);
     const { payload } = await buildAndSubmit({

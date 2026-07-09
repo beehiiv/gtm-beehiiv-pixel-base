@@ -50,9 +50,9 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   let email_hash_sha256 = toStringField(ctx.data.email_hash_sha256) ?? '';
   let email_hash_sha1 = toStringField(ctx.data.email_hash_sha1) ?? '';
 
-  // Fall back to hashing a raw email only for the algorithm(s) the caller
-  // didn't already supply a hash for. Email comes from explicit data, or as a
-  // URL query param fallback (advertisers sometimes pass it in the conversion URL).
+  // Fall back to the `email` field only for the algorithm(s) the caller didn't
+  // already supply a hash for. Email comes from explicit data, or as a URL query
+  // param fallback (advertisers sometimes pass it in the conversion URL).
   if (!email_hash_sha256 || !email_hash_sha1) {
     let email = ctx.data.email || '';
     if (!email) {
@@ -63,9 +63,24 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
         // ignore — URL parsing failure means no email fallback
       }
     }
-    const computed = await hashEmail(email);
-    email_hash_sha256 = email_hash_sha256 || computed.email_hash_sha256;
-    email_hash_sha1 = email_hash_sha1 || computed.email_hash_sha1;
+
+    // A real email always contains `@` — hash it. If it has no `@`, it's almost
+    // certainly already a hash: some advertisers drop their pre-hashed value
+    // straight into `email`. Never hash that — sha256(sha256(email)) matches
+    // nothing — so route it to the field its hex length identifies instead.
+    if (email.includes('@')) {
+      const computed = await hashEmail(email);
+      email_hash_sha256 = email_hash_sha256 || computed.email_hash_sha256;
+      email_hash_sha1 = email_hash_sha1 || computed.email_hash_sha1;
+    } else if (email) {
+      if (!email_hash_sha256 && /^[a-f0-9]{64}$/i.test(email)) {
+        email_hash_sha256 = email;
+      } else if (!email_hash_sha1 && /^[a-f0-9]{40}$/i.test(email)) {
+        email_hash_sha1 = email;
+      } else {
+        console.warn('[bhpx] email: value has no "@" and is not a recognized hash — dropped');
+      }
+    }
   }
 
   const d = ctx.data;
