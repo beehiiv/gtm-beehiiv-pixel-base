@@ -14,6 +14,10 @@ export interface TrackData {
   value_cents?: number | string;
   order_id?: string | number;
   email?: string;
+  // Pre-hashed email, supplied by advertisers who don't want to send raw PII
+  // to the pixel. When present, shipped verbatim instead of hashing `email`.
+  email_hash_sha256?: string;
+  email_hash_sha1?: string;
 }
 
 export interface TrackOptions {

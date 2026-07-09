@@ -148,6 +148,39 @@ describe('Apiary ingestion contract', () => {
     expect(status, body).toBe(201);
   });
 
+  test('email: raw value is hashed, not passed through', async () => {
+    const { payload, status, body } = await buildAndSubmit({
+      email: 'contract-test@example.com',
+    });
+    // sha256 hex is 64 chars, sha1 is 40 — and neither equals the raw input.
+    expect(payload.email_hash_sha256.length).toBe(64);
+    expect(payload.email_hash_sha1.length).toBe(40);
+    expect(payload.email_hash_sha256).not.toBe('contract-test@example.com');
+    expect(status, body).toBe(201);
+  });
+
+  test('email_hash_sha256: pre-hashed value passes through verbatim', async () => {
+    // Advertisers who won't send raw PII supply the hash themselves; we must
+    // NOT re-hash it (that gave clients sha256(sha256(email))).
+    const preHashed = 'a'.repeat(64);
+    const { payload, status, body } = await buildAndSubmit({
+      email_hash_sha256: preHashed,
+    });
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(status, body).toBe(201);
+  });
+
+  test('email_hash_sha256 wins over raw email when both are sent', async () => {
+    const preHashed = 'b'.repeat(64);
+    const { payload } = await buildAndSubmit({
+      email: 'contract-test@example.com',
+      email_hash_sha256: preHashed,
+    });
+    // Provided sha256 is verbatim; sha1 still falls back to hashing the email.
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(payload.email_hash_sha1.length).toBe(40);
+  });
+
   test('purchase event with full payload', async () => {
     const { payload, status, body } = await buildAndSubmit(
       {

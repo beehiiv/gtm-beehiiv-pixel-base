@@ -57,7 +57,8 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
 
 ### Event Settings
 - **Event Name**: Select the type of event you want to track
-- **Email**: Optional, but desirable. Email is hashed before sending to backend.
+- **Email**: Optional, but desirable. The raw email is hashed (SHA-256 & SHA-1) before sending to the backend.
+- **Email hash (SHA-256)** / **Email hash (SHA-1)**: Optional. If you prefer not to send raw PII, pass a pre-computed hash directly and it is sent verbatim (no re-hashing). Provide either the raw **Email** *or* a pre-hashed value — not both.
 - **Order ID**: Optional, but desirable. Used for cross-referencing conversions.
 
 ### Monetary Values

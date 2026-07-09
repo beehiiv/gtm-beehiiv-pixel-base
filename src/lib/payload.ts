@@ -44,19 +44,29 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   const subscriber_id = isValidUUID(rawSubscriber) ? rawSubscriber : '';
   const email_address_id = isValidUUID(rawEmail) ? rawEmail : undefined;
 
-  // Email comes either from explicit data, or as a URL query param fallback
-  // (advertisers sometimes pass email in the conversion URL).
-  let email = ctx.data.email || '';
-  if (!email) {
-    try {
-      const url = new URL(ctx.url);
-      email = url.searchParams.get('email') || '';
-    } catch {
-      // ignore — URL parsing failure means no email fallback
-    }
-  }
+  // Advertisers who don't want to hand the pixel raw PII can pass a
+  // pre-computed hash directly. When provided, we ship it verbatim into the
+  // same field we'd otherwise fill — hashing here would double-hash it.
+  let email_hash_sha256 = toStringField(ctx.data.email_hash_sha256) ?? '';
+  let email_hash_sha1 = toStringField(ctx.data.email_hash_sha1) ?? '';
 
-  const { email_hash_sha256, email_hash_sha1 } = await hashEmail(email);
+  // Fall back to hashing a raw email only for the algorithm(s) the caller
+  // didn't already supply a hash for. Email comes from explicit data, or as a
+  // URL query param fallback (advertisers sometimes pass it in the conversion URL).
+  if (!email_hash_sha256 || !email_hash_sha1) {
+    let email = ctx.data.email || '';
+    if (!email) {
+      try {
+        const url = new URL(ctx.url);
+        email = url.searchParams.get('email') || '';
+      } catch {
+        // ignore — URL parsing failure means no email fallback
+      }
+    }
+    const computed = await hashEmail(email);
+    email_hash_sha256 = email_hash_sha256 || computed.email_hash_sha256;
+    email_hash_sha1 = email_hash_sha1 || computed.email_hash_sha1;
+  }
 
   const d = ctx.data;
   const content_category = toStringField(d.content_category);
