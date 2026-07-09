@@ -170,6 +170,16 @@ describe('Apiary ingestion contract', () => {
     expect(status, body).toBe(201);
   });
 
+  test('non-string email from a misconfigured datalayer does not throw', async () => {
+    // GTM/datalayer can hand us a scalar that isn't a string; the string ops
+    // in the routing logic must not blow up on it.
+    const { payload, status, body } = await buildAndSubmit({
+      email: 12345 as unknown as string,
+    });
+    expect(payload.email_hash_sha256).toBe('');
+    expect(status, body).toBe(201);
+  });
+
   test('hash-shaped value in the email field is routed, not re-hashed', async () => {
     // The Slack-thread scenario: advertiser puts their sha256 in `email`.
     // Hashing it would ship sha256(sha256(email)); instead we detect the hex

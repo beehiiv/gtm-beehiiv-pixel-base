@@ -54,7 +54,9 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   // already supply a hash for. Email comes from explicit data, or as a URL query
   // param fallback (advertisers sometimes pass it in the conversion URL).
   if (!email_hash_sha256 || !email_hash_sha1) {
-    let email = ctx.data.email || '';
+    // Coerce first — a misconfigured datalayer can hand us a number/boolean,
+    // and the string ops below (.includes/.test) would throw on a non-string.
+    let email = toStringField(ctx.data.email) ?? '';
     if (!email) {
       try {
         const url = new URL(ctx.url);
