@@ -148,6 +148,59 @@ describe('Apiary ingestion contract', () => {
     expect(status, body).toBe(201);
   });
 
+  test('email: raw value is hashed, not passed through', async () => {
+    const { payload, status, body } = await buildAndSubmit({
+      email: 'contract-test@example.com',
+    });
+    // sha256 hex is 64 chars, sha1 is 40 — and neither equals the raw input.
+    expect(payload.email_hash_sha256.length).toBe(64);
+    expect(payload.email_hash_sha1.length).toBe(40);
+    expect(payload.email_hash_sha256).not.toBe('contract-test@example.com');
+    expect(status, body).toBe(201);
+  });
+
+  test('email_hash_sha256: pre-hashed value passes through verbatim', async () => {
+    // Advertisers who won't send raw PII supply the hash themselves; we must
+    // NOT re-hash it (that gave clients sha256(sha256(email))).
+    const preHashed = 'a'.repeat(64);
+    const { payload, status, body } = await buildAndSubmit({
+      email_hash_sha256: preHashed,
+    });
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(status, body).toBe(201);
+  });
+
+  test('non-string email from a misconfigured datalayer does not throw', async () => {
+    // GTM/datalayer can hand us a scalar that isn't a string; the string ops
+    // in the routing logic must not blow up on it.
+    const { payload, status, body } = await buildAndSubmit({
+      email: 12345 as unknown as string,
+    });
+    expect(payload.email_hash_sha256).toBe('');
+    expect(status, body).toBe(201);
+  });
+
+  test('hash-shaped value in the email field is routed, not re-hashed', async () => {
+    // The Slack-thread scenario: advertiser puts their sha256 in `email`.
+    // Hashing it would ship sha256(sha256(email)); instead we detect the hex
+    // shape (no `@`) and route it verbatim to email_hash_sha256.
+    const preHashed = 'c'.repeat(64);
+    const { payload, status, body } = await buildAndSubmit({ email: preHashed });
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(status, body).toBe(201);
+  });
+
+  test('email_hash_sha256 wins over raw email when both are sent', async () => {
+    const preHashed = 'b'.repeat(64);
+    const { payload } = await buildAndSubmit({
+      email: 'contract-test@example.com',
+      email_hash_sha256: preHashed,
+    });
+    // Provided sha256 is verbatim; sha1 still falls back to hashing the email.
+    expect(payload.email_hash_sha256).toBe(preHashed);
+    expect(payload.email_hash_sha1.length).toBe(40);
+  });
+
   test('purchase event with full payload', async () => {
     const { payload, status, body } = await buildAndSubmit(
       {

@@ -104,7 +104,22 @@ ___TEMPLATE_PARAMETERS___
         "type": "TEXT",
         "name": "email",
         "displayName": "Email address",
-        "simpleValueType": true
+        "simpleValueType": true,
+        "help": "Raw email address. Hashed (SHA-256 & SHA-1) before sending. Leave blank if you provide a pre-hashed value below."
+      },
+      {
+        "type": "TEXT",
+        "name": "email_hash_sha256",
+        "displayName": "Email hash (SHA-256)",
+        "simpleValueType": true,
+        "help": "Pre-hashed email for advertisers who prefer not to send raw PII. Sent verbatim — do not also fill in Email address."
+      },
+      {
+        "type": "TEXT",
+        "name": "email_hash_sha1",
+        "displayName": "Email hash (SHA-1)",
+        "simpleValueType": true,
+        "help": "Pre-hashed email (SHA-1). Sent verbatim — do not also fill in Email address."
       },
       {
         "type": "TEXT",
@@ -312,6 +327,8 @@ const payload = {
     search_string: eventData.search_string,
     status: makeBoolean(eventData.status),
     email: eventData.email,
+    email_hash_sha256: eventData.email_hash_sha256,
+    email_hash_sha1: eventData.email_hash_sha1,
     order_id: eventData.order_id,
   },
 };
