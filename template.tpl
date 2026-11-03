@@ -102,6 +102,13 @@ ___TEMPLATE_PARAMETERS___
       },
       {
         "type": "TEXT",
+        "name": "event_id",
+        "displayName": "Event ID",
+        "simpleValueType": true,
+        "help": "Your unique ID for this conversion, such as your order number. If you also send conversions from your server (Conversions API), send the exact same value there so the conversion is counted once. Never reuse a value for a different conversion, and leave blank for page views. If blank, a unique ID is generated."
+      },
+      {
+        "type": "TEXT",
         "name": "email",
         "displayName": "Email address",
         "simpleValueType": true,
@@ -125,7 +132,8 @@ ___TEMPLATE_PARAMETERS___
         "type": "TEXT",
         "name": "order_id",
         "displayName": "Order ID",
-        "simpleValueType": true
+        "simpleValueType": true,
+        "help": "Informational only, shown in reporting. Not used to deduplicate conversions: use Event ID for that."
       }
     ]
   },
@@ -286,7 +294,7 @@ const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
 const copyFromWindow = require('copyFromWindow');
 
-const VERSION = 'v2.2.0';
+const VERSION = 'v2.4.0';
 
 log('beehiiv pixel loaded', VERSION);
 // Constants
@@ -326,6 +334,7 @@ const payload = {
     content_type: eventData.content_type,
     search_string: eventData.search_string,
     status: makeBoolean(eventData.status),
+    event_id: eventData.event_id,
     email: eventData.email,
     email_hash_sha256: eventData.email_hash_sha256,
     email_hash_sha1: eventData.email_hash_sha1,
