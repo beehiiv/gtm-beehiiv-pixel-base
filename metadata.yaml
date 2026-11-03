@@ -2,6 +2,21 @@ homepage: "https://www.beehiiv.com"
 documentation: "https://developers.beehiiv.com/"
 versions:
   # Latest version
+  - sha: dc4bf201597cc4ac094643cd84d1042eba1ac480
+    changeNotes: |2
+      Version 2.4.0
+
+      New Event ID field. Set it to your own unique ID for a conversion, such
+      as your order number. If you also send conversions from your server
+      (Conversions API), send the exact same value there and the conversion is
+      counted once instead of twice. Leave it blank for page views; a unique
+      ID is generated as before. Order ID is now informational only and is
+      never used to deduplicate conversions.
+
+      Also adds optional pre-hashed email fields (SHA-256 and SHA-1) for
+      advertisers who prefer not to send raw email addresses. Pre-hashed
+      values are sent as-is and are never hashed a second time.
+
   - sha: d74d487163bde8db8ed6708a80176a3661796241
     changeNotes: |2
       Version 2.2.5
