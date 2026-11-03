@@ -91,10 +91,11 @@ Things that make `track()` return without ever calling the network:
   `[bhpx] unsupported event "..."` and is dropped.
 - **Dedupe.** Identical payloads are suppressed for **15 minutes**
   (`src/lib/dedupe.ts`, localStorage key `bhpx_processed_events`). The hash covers
-  everything *except* timestamps and `event_id` — so repeated conversions on the same
-  URL with the same data (e.g. reloading a thank-you page during testing) only send the
-  first time. **To re-test:** use incognito, clear localStorage, or vary the data
-  (e.g. a unique `order_id`). This is by design, not a bug.
+  everything *except* timestamps and a pixel-generated `event_id` (an advertiser-supplied
+  `event_id` counts) — so repeated conversions on the same URL with the same data (e.g.
+  reloading a thank-you page during testing) only send the first time. **To re-test:** use
+  incognito, clear localStorage, or vary the data (e.g. a unique `event_id`). This is by
+  design, not a bug.
 - **Crawler/bot.** `isCrawler()` (`src/lib/utils.ts`) short-circuits `track()` for
   bot user-agents. Rare, but headless test tooling can trip it.
 

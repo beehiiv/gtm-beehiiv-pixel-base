@@ -65,7 +65,7 @@ This half handles checkout `purchase` attribution.
 
 **What this does:**
 - Subscribes to Shopify's `page_viewed` event to ensure `_bhp` exists and to capture any `bhcl_id` query param that arrives in checkout (e.g., direct-to-checkout deep links)
-- Subscribes to `checkout_completed` and fires a `purchase` event with `order_id`, hashed `email`, `currency`, and `value_cents`
+- Subscribes to `checkout_completed` and fires a `purchase` event with `event_id` and `order_id` (both Shopify's order ID), hashed `email`, `currency`, and `value_cents`
 - Reads the `_bhc` / `_bhp` cookies written by Part 1 via Shopify's `browser.cookie` API, so attribution flows through to the conversion event
 
 ## Testing
@@ -93,7 +93,7 @@ Both halves send the same `PixelPayload` shape to `https://ingestion.prod.apiary
 |---|---|---|
 | `pixel_id` | Hardcoded in snippet | Your beehiiv pixel ID |
 | `event` | `'pageview'` / `'purchase'` / etc. | Lowercase |
-| `event_id` | Generated UUID | Used for deduplication |
+| `event_id` | `event.data.checkout.order.id` on purchase; generated UUID otherwise | Deduplicates against a server-side Conversions API event that sends the same Shopify order ID |
 | `url` | Storefront URL | From `window.location` or `event.context.document.location.href` |
 | `ad_network_placement_id` | `_bhc` cookie | Empty if user didn't arrive from a beehiiv ad |
 | `subscriber_id` | `_bhc` cookie | Same |
