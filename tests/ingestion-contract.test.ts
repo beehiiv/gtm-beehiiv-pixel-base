@@ -23,7 +23,10 @@ import type { CookieJar, CookieName } from '../src/lib/cookies';
 import { buildPayload } from '../src/lib/payload';
 import type { TrackData } from '../src/lib/types';
 
-const INGESTION_URL = 'https://ingestion.prod.apiarydata.net/api/v2/ingestion/pixel';
+// Override to test against an Apiary change before it reaches prod, e.g.
+// INGESTION_URL=https://ingestion.staging.apiarydata.net/api/v2/ingestion/pixel
+const INGESTION_URL =
+  process.env.INGESTION_URL || 'https://ingestion.prod.apiarydata.net/api/v2/ingestion/pixel';
 const ALL_ZEROS_UUID = '00000000-0000-0000-0000-000000000000';
 
 class TestCookieJar implements CookieJar {
@@ -199,6 +202,43 @@ describe('Apiary ingestion contract', () => {
     // Provided sha256 is verbatim; sha1 still falls back to hashing the email.
     expect(payload.email_hash_sha256).toBe(preHashed);
     expect(payload.email_hash_sha1.length).toBe(40);
+  });
+
+  test('event_id: omitted — a fresh UUID is generated, as always', async () => {
+    const { payload, status, body } = await buildAndSubmit({});
+    expect(payload.event_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(status, body).toBe(201);
+  });
+
+  test('event_id: advertiser string is sent raw for Apiary to normalize', async () => {
+    // The pixel must never hash this itself: Apiary maps the same string to
+    // the same UUID on both the pixel and postback endpoints, and a second
+    // implementation here could drift from it.
+    const { payload, status, body } = await buildAndSubmit({ event_id: 'ORD-4471' }, 'purchase');
+    expect(payload.event_id).toBe('ORD-4471');
+    expect(status, body).toBe(201);
+  });
+
+  test('event_id: numeric — coerced to string', async () => {
+    const { payload, status, body } = await buildAndSubmit({ event_id: 4138434 }, 'purchase');
+    expect(payload.event_id).toBe('4138434');
+    expect(status, body).toBe(201);
+  });
+
+  test('event_id: unresolved GTM variable ("undefined") falls back to a UUID', async () => {
+    // Passed through, every such event would share one id and the last one
+    // sent would overwrite all the others in attribution.
+    const { payload, status, body } = await buildAndSubmit({ event_id: 'undefined' }, 'purchase');
+    expect(payload.event_id).not.toBe('undefined');
+    expect(payload.event_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(status, body).toBe(201);
+  });
+
+  test('order_id never stands in for a missing event_id', async () => {
+    // order_id is informational: in the wild it carries values like "Annual"
+    // or "false" shared across many events, so it can't be an identity.
+    const { payload } = await buildAndSubmit({ order_id: '4138434' }, 'purchase');
+    expect(payload.event_id).not.toBe('4138434');
   });
 
   test('purchase event with full payload', async () => {

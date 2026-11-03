@@ -1,3 +1,4 @@
+import { hasGeneratedEventId } from './payload';
 import type { PixelPayload } from './types';
 
 const STORAGE_KEY = 'bhpx_processed_events';
@@ -68,13 +69,15 @@ export function dedupe(events: PixelPayload[]): PixelPayload[] {
   return filtered;
 }
 
-// Excludes timestamps and event_id from the hash so a "same event, different
-// instant" still dedupes. Without this, every pageview would be unique.
+// Excludes timestamps and a generated event_id from the hash so a "same event,
+// different instant" still dedupes. Without this, every pageview would be
+// unique. An advertiser-supplied event_id stays in: two orders with otherwise
+// identical payloads are still two orders.
 function hashEventForDedupe(event: PixelPayload): string {
   const { timestamp, landed_timestamp, sent_timestamp, event_id, ...rest } = event;
   void timestamp;
   void landed_timestamp;
   void sent_timestamp;
-  void event_id;
-  return hashString(JSON.stringify(rest));
+  const identity = hasGeneratedEventId(event) ? rest : { ...rest, event_id };
+  return hashString(JSON.stringify(identity));
 }

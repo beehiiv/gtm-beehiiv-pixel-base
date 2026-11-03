@@ -114,7 +114,10 @@ analytics.subscribe('page_viewed', async (event: ShopifyEvent) => {
 // the user landed from a beehiiv ad, so attribution flows through unchanged.
 analytics.subscribe('checkout_completed', async (event: ShopifyEvent) => {
   const checkout = event.data?.checkout;
+  // Shopify's own order id is a trustworthy unique key, so it doubles as the
+  // event_id: a server-side postback sending the same id deduplicates.
   await track('purchase', event, {
+    event_id: checkout?.order?.id,
     order_id: checkout?.order?.id,
     email: checkout?.email,
     currency: checkout?.currencyCode,

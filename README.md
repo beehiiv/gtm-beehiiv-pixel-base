@@ -57,9 +57,10 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
 
 ### Event Settings
 - **Event Name**: Select the type of event you want to track
+- **Event ID**: Recommended for conversions. Your unique ID for this conversion, such as your order number. If you also send conversions server-side through the beehiiv Conversions API, send the exact same value there and the conversion is counted once (the last one received wins). Never reuse a value for a different conversion, and leave it blank for page views. When blank, the pixel generates a unique ID.
 - **Email**: Optional, but desirable. The raw email is hashed (SHA-256 & SHA-1) before sending to the backend.
 - **Email hash (SHA-256)** / **Email hash (SHA-1)**: Optional. If you prefer not to send raw PII, pass a pre-computed hash directly and it is sent verbatim (no re-hashing). Provide either the raw **Email** *or* a pre-hashed value — not both.
-- **Order ID**: Optional, but desirable. Used for cross-referencing conversions.
+- **Order ID**: Optional. Informational only (shown in reporting); it is never used to deduplicate conversions. Use **Event ID** for that.
 
 ### Monetary Values
 - **Currency**: Three-letter currency code (e.g., "usd", "eur")
@@ -83,6 +84,7 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
 ```javascript
 {
   "eventName": "purchase",
+  "event_id": "ORD-4471",
   "currency": "usd",
   "value_cents": 1999,
   "num_items": 2
@@ -106,6 +108,13 @@ Or find the beehiiv Pixel V2 template in the Template Gallery and add to your co
   "currency": "usd",
   "value_cents": 1000
 }
+```
+
+### Calling the pixel directly (without GTM)
+```javascript
+bhpx('track', 'purchase', {
+  data: { event_id: 'ORD-4471', order_id: 'ORD-4471', currency: 'usd', value_cents: 1999 },
+});
 ```
 
 ## Troubleshooting

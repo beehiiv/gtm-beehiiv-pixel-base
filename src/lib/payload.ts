@@ -30,8 +30,29 @@ export interface BuildPayloadContext {
 // Apiary exactly what it expects. Coerce silently when the meaning is
 // preserved; warn-and-drop only when the data is truly garbage (objects
 // where a primitive belongs, NaN, empty strings).
+// Payloads whose event_id we generated rather than received. Dedupe ignores a
+// generated id (it's unique per call by design) but must respect a supplied one.
+const generatedEventIds = new WeakSet<PixelPayload>();
+
+export function hasGeneratedEventId(payload: PixelPayload): boolean {
+  return generatedEventIds.has(payload);
+}
+
+// A GTM variable that failed to resolve arrives as the string "undefined";
+// passed through, every such event would share one id and overwrite the last.
+function suppliedEventId(v: unknown): string | undefined {
+  const id = toIdString(v)?.trim();
+  if (!id) return undefined;
+  if (/^(undefined|null)$/i.test(id)) {
+    console.warn(`[bhpx] event_id: "${id}" is not a real id — generating one instead`);
+    return undefined;
+  }
+  return id;
+}
+
 export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPayload> {
-  const event_id = generateUUID();
+  const supplied_event_id = suppliedEventId(ctx.data.event_id);
+  const event_id = supplied_event_id ?? generateUUID();
   const timestamp = Date.now();
 
   const [bhc, bhp] = await Promise.all([ctx.cookies.get('_bhc'), ctx.cookies.get('_bhp')]);
@@ -115,7 +136,7 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
   warnIfChanged('value_cents', d.value_cents, value_cents);
   warnIfChanged('order_id', d.order_id, order_id);
 
-  return {
+  const payload: PixelPayload = {
     pixel_id: ctx.pixelId,
     ad_network_placement_id,
     subscriber_id,
@@ -143,4 +164,6 @@ export async function buildPayload(ctx: BuildPayloadContext): Promise<PixelPaylo
     order_id,
     email_address_id,
   };
+  if (!supplied_event_id) generatedEventIds.add(payload);
+  return payload;
 }

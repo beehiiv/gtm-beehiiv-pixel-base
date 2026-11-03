@@ -12,6 +12,9 @@ export interface TrackData {
   search_string?: string;
   status?: boolean | string;
   value_cents?: number | string;
+  // Sent raw: Apiary maps it to the same UUID for pixel and postback, so the
+  // pixel must never hash it. order_id is informational and never stands in.
+  event_id?: string | number;
   order_id?: string | number;
   email?: string;
   // Pre-hashed email, supplied by advertisers who don't want to send raw PII
